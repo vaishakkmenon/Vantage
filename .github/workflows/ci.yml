@@ -3,15 +3,20 @@ name: Vantage CI
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
   WORKING_DIR: ./backend
 
+permissions:
+  contents: write
+
 jobs:
-  lint:
+  check:
     name: Lint & Format
     runs-on: ubuntu-latest
     steps:
@@ -19,56 +24,91 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: rustfmt, clippy
-    
     - name: Check Formatting
       working-directory: ${{ env.WORKING_DIR }}
       run: cargo fmt -- --check
-      
     - name: Clippy
       working-directory: ${{ env.WORKING_DIR }}
-      # We enable load_magic here too to lint that specific code path
-      run: cargo clippy --features "load_magic deterministic_zobrist" -- -D warnings
+      run: cargo clippy --features "load-magic" -- -D warnings
 
   test:
-    name: Run Tests
-    runs-on: ubuntu-latest
+    name: Test (${{ matrix.os }})
+    needs: check
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
-
     - uses: Swatinem/rust-cache@v2
       with:
         workspaces: backend -> target
-
     - name: Run Tests
       working-directory: ${{ env.WORKING_DIR }}
-      # RESTORED: load_magic is back!
-      run: cargo test --release --features "load_magic deterministic_zobrist" -- --test-threads=1
+      run: cargo test --release --features "load-magic deterministic_zobrist" -- --test-threads=1
 
-  build:
-    name: Build Release EXE
-    needs: [lint, test]
-    runs-on: windows-latest
-    if: github.ref == 'refs/heads/main'
+  release:
+    name: Release (${{ matrix.os }})
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: vantage-windows-x86_64.zip
+            binary_path: backend/target/release/vantage.exe
+            exe_name: vantage.exe
+          - os: ubuntu-latest
+            artifact_name: vantage-linux-x86_64.tar.gz
+            binary_path: backend/target/release/vantage
+            exe_name: vantage
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
-
-    - uses: Swatinem/rust-cache@v2
-      with:
-        workspaces: backend -> target
-
+    
     - name: Build Release
       working-directory: ${{ env.WORKING_DIR }}
       env:
         RUSTFLAGS: "-C target-cpu=x86-64"
-      # RESTORED: load_magic is back!
-      run: cargo build --release --features "load_magic deterministic_zobrist"
+      run: cargo build --release --features "load-magic"
 
-    - name: Upload Engine Artifact
-      uses: actions/upload-artifact@v4
+    - name: Prepare Package
+      shell: bash
+      run: |
+        mkdir -p release/vantage
+        cp ${{ matrix.binary_path }} release/vantage/${{ matrix.exe_name }}
+        cp README.md release/vantage/
+        # Copy the book (Check if it exists first to avoid crashing if you forget it)
+        if [ -f "backend/book.bin" ]; then
+          cp backend/book.bin release/vantage/
+        elif [ -f "book.bin" ]; then
+          cp book.bin release/vantage/
+        else
+          echo "WARNING: book.bin not found in root or backend!"
+        fi
+
+    - name: Compress (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: thedoctor0/zip-release@0.7.6
       with:
-        name: vantage
-        path: backend/target/release/vantage.exe
-        retention-days: 30
+        type: 'zip'
+        filename: ${{ matrix.artifact_name }}
+        directory: 'release'
+        path: 'vantage'
+
+    - name: Compress (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd release
+        tar -czvf ${{ matrix.artifact_name }} vantage
+
+    - name: Publish Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release/${{ matrix.artifact_name }}
+        draft: true
+        prerelease: false
+        generate_release_notes: true
