@@ -45,8 +45,8 @@ impl SeeExt for Board {
     }
 
     fn static_exchange_eval(&self, m: Move, threshold: i32, tables: &MagicTables) -> bool {
-        let to_sq = m.to.index() as u8;
-        let from_sq = m.from.index() as u8;
+        let to_sq = m.to.index();
+        let from_sq = m.from.index();
 
         let piece_value = |p: Piece| match p {
             Piece::Pawn => 100,

@@ -54,7 +54,7 @@ fn calculate_phase(board: &Board) -> i32 {
         + (rooks as i32 * ROOK_PHASE)
         + (queens as i32 * QUEEN_PHASE);
 
-    current_phase_material.min(TOTAL_PHASE).max(0)
+    current_phase_material.clamp(0, TOTAL_PHASE)
 }
 
 #[inline(always)]
@@ -137,9 +137,9 @@ fn mop_up_eval(board: &Board, my_color: Color) -> i32 {
     // Reward our king proximity (14 - king_dist, where 14 is max distance)
     // Weights: Edge (10cp per unit), Proximity (4cp per unit)
     // Max bonus: (14*10) + (14*4) = ~196cp
-    let score = (10 * center_dist) + (4 * (14 - king_dist));
+    
 
-    score
+    (10 * center_dist) + (4 * (14 - king_dist))
 }
 
 /// Helper: Calculate total material value for a color (tapered)
@@ -207,7 +207,7 @@ fn calculate_phased_safety(board: &Board, color: Color, tables: &MagicTables) ->
     }
 
     // Tapering logic: Penalty is 100% at phase 24 and 0% at phase 0.
-    let penalty = (attack_count * KING_ZONE_ATTACK_PENALTY * phase as i32) / 24;
+    let penalty = (attack_count * KING_ZONE_ATTACK_PENALTY * phase) / 24;
 
     -penalty // Return as negative value (a penalty)
 }
@@ -246,7 +246,7 @@ fn count_king_zone_attacks(
 
         while attackers != 0 {
             let from_idx = pop_lsb(&mut attackers);
-            let from_sq = Square::from_index(from_idx as u8);
+            let from_sq = Square::from_index(from_idx);
 
             let is_attacking = match piece_type {
                 // Use the new standalone function for Knight attacks

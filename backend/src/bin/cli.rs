@@ -161,13 +161,12 @@ fn parse_uci_move(board: &Board, move_str: &str, tables: &MagicTables) -> Option
 fn handle_go(parts: &[&str], board: &mut Board, tables: &MagicTables, book: &Option<PolyglotBook>) {
     // --- STEP A: Check Opening Book First ---
     // If we have a book, and the board position is in it, play immediately.
-    if let Some(b) = book {
-        if let Some(book_move) = b.probe(board) {
+    if let Some(b) = book
+        && let Some(book_move) = b.probe(board) {
             println!("info string Book move found");
             println!("bestmove {}", book_move.to_uci());
             return; // EXIT IMMEDIATELY - Do not search!
         }
-    }
     // ----------------------------------------
     let mut depth = 64;
     let mut time_limit = None;
@@ -309,7 +308,7 @@ fn handle_go(parts: &[&str], board: &mut Board, tables: &MagicTables, book: &Opt
 fn run_epd_tests(path: &str, tables: &MagicTables) {
     let file = match File::open(path) {
         Ok(f) => f,
-        Err(_) => match File::open(format!("bench_arena/{}", path.split('/').last().unwrap())) {
+        Err(_) => match File::open(format!("bench_arena/{}", path.split('/').next_back().unwrap())) {
             Ok(f) => f,
             Err(_) => {
                 println!("Error: Could not find EPD file at '{}' or local.", path);
@@ -419,7 +418,7 @@ fn san_to_uci(board: &mut Board, san: &str, tables: &MagicTables) -> Option<Stri
     }
     let target_str = &clean_san[clean_san.len() - 2..];
 
-    let file = (target_str.chars().nth(0)? as u8).wrapping_sub(b'a');
+    let file = (target_str.chars().next()? as u8).wrapping_sub(b'a');
     let rank = (target_str.chars().nth(1)? as u8).wrapping_sub(b'1');
     if file > 7 || rank > 7 {
         return None;
@@ -472,15 +471,14 @@ fn san_to_uci(board: &mut Board, san: &str, tables: &MagicTables) -> Option<Stri
                 let from_file = from_sq % 8;
                 let from_rank = from_sq / 8;
 
-                if d >= 'a' && d <= 'h' {
+                if ('a'..='h').contains(&d) {
                     if from_file != (d as u8 - b'a') {
                         return false;
                     }
-                } else if d >= '1' && d <= '8' {
-                    if from_rank != (d as u8 - b'1') {
+                } else if ('1'..='8').contains(&d)
+                    && from_rank != (d as u8 - b'1') {
                         return false;
                     }
-                }
             }
             true
         })

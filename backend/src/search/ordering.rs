@@ -39,11 +39,10 @@ pub fn order_moves(
     // stable sort so non-captures keep their generation order
     moves.sort_by_cached_key(|&mv| {
         // Priority 0: Best move from previous iteration (Hash Move)
-        if let Some(hm) = hash_move {
-            if mv.from == hm.from && mv.to == hm.to && mv.promotion == hm.promotion {
+        if let Some(hm) = hash_move
+            && mv.from == hm.from && mv.to == hm.to && mv.promotion == hm.promotion {
                 return -2_000_000_000; // Found it! Search first.
             }
-        }
 
         // Priority 1: Promotions
         if let Some(p) = mv.promotion {
@@ -62,16 +61,14 @@ pub fn order_moves(
         }
 
         // Priority 3: Killer moves
-        if let Some(k1) = killer_moves[0] {
-            if mv.from == k1.from && mv.to == k1.to && mv.promotion == k1.promotion {
+        if let Some(k1) = killer_moves[0]
+            && mv.from == k1.from && mv.to == k1.to && mv.promotion == k1.promotion {
                 return -KILLER1_SCORE;
             }
-        }
-        if let Some(k2) = killer_moves[1] {
-            if mv.from == k2.from && mv.to == k2.to && mv.promotion == k2.promotion {
+        if let Some(k2) = killer_moves[1]
+            && mv.from == k2.from && mv.to == k2.to && mv.promotion == k2.promotion {
                 return -KILLER2_SCORE;
             }
-        }
 
         if mv.piece == Piece::Pawn && !mv.is_capture() {
             let to_rank = mv.to.index() / 8;
@@ -82,7 +79,7 @@ pub fn order_moves(
                 to_rank < from_rank
             };
 
-            if is_advancing && to_rank >= 3 && to_rank <= 5 {
+            if is_advancing && (3..=5).contains(&to_rank) {
                 return -(5000 + (to_rank as i32 * 100)); // Prioritize progress over shuffles
             }
         }

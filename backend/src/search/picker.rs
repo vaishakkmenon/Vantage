@@ -94,11 +94,10 @@ impl MovePicker {
     #[inline]
     fn is_killer(&self, mv: Move) -> bool {
         for killer in &self.killers {
-            if let Some(k) = killer {
-                if mv.from == k.from && mv.to == k.to && mv.promotion == k.promotion {
+            if let Some(k) = killer
+                && mv.from == k.from && mv.to == k.to && mv.promotion == k.promotion {
                     return true;
                 }
-            }
         }
         false
     }
@@ -502,10 +501,8 @@ fn is_pseudo_legal(board: &Board, mv: Move, tables: &MagicTables) -> bool {
                         return false;
                     }
                 }
-            } else {
-                if KING_ATTACKS[from_idx] & to_bb == 0 {
-                    return false;
-                }
+            } else if KING_ATTACKS[from_idx] & to_bb == 0 {
+                return false;
             }
         }
     }
