@@ -68,7 +68,7 @@ fn main() {
 }
 
 fn handle_uci() {
-    println!("id name Wayfinder 1.0 (Alpha-Beta)");
+    println!("id name Vantage 1.0");
     println!("id author Vaishak Menon");
     println!("uciok");
 }
