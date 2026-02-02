@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use vantage::board::{Board, Color, Piece};
 use vantage::moves::execute::{make_move_basic, undo_move_basic};
 use vantage::moves::types::{
@@ -5,7 +6,6 @@ use vantage::moves::types::{
     QUIET_MOVE,
 };
 use vantage::square::Square;
-use std::str::FromStr;
 
 pub(crate) const EMPTY_SQ: u8 = 0xFF;
 
@@ -183,8 +183,8 @@ fn roundtrip_black_queenside_castle() {
 
 #[test]
 fn castling_rights_removed_on_king_move() {
-    use vantage::board::{Board, Color};
     use std::str::FromStr;
+    use vantage::board::{Board, Color};
 
     let fen = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
     let mut board = Board::from_str(fen).unwrap();
@@ -213,8 +213,8 @@ fn castling_rights_removed_on_king_move() {
 
 #[test]
 fn castling_rights_removed_on_rook_move() {
-    use vantage::board::{Board, Color};
     use std::str::FromStr;
+    use vantage::board::{Board, Color};
 
     let fen = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1";
     let mut board = Board::from_str(fen).unwrap();

@@ -1,9 +1,9 @@
+use std::str::FromStr;
 use vantage::board::{Board, Piece};
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::{CAPTURE, KINGSIDE_CASTLE, Move, PROMOTION_CAPTURE, QUIET_MOVE};
 use vantage::search::ordering::order_moves;
 use vantage::square::Square;
-use std::str::FromStr;
 
 fn make_move(from: &str, to: &str, flags: u8, promo: Option<Piece>, piece: Piece) -> Move {
     Move {

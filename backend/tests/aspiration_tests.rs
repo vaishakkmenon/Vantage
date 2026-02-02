@@ -1,7 +1,7 @@
+use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::search::search::search; // Updated API
-use std::str::FromStr;
 
 #[test]
 fn test_aspiration_finds_correct_move() {

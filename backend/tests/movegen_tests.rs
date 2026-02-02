@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use vantage::board::{Board, Color, Piece};
 use vantage::moves::execute::generate_legal;
 use vantage::moves::magic::loader::load_magic_tables;
@@ -9,7 +10,6 @@ use vantage::moves::movegen::generate_queen_moves;
 use vantage::moves::movegen::generate_rook_moves;
 use vantage::moves::types::Move;
 use vantage::square::Square;
-use std::str::FromStr;
 
 /// Set the bitboard for (color, piece) to exactly `mask`, then recompute occupancies.
 fn set_piece_mask(board: &mut Board, color: Color, piece: Piece, mask: u64) {

@@ -1,5 +1,6 @@
 //! Minimal search wiring tests: depth-0 behavior, stalemate/checkmate behavior,
 //! and a simple "free capture at depth=1" sanity check.
+use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::Move;
@@ -7,7 +8,6 @@ use vantage::search::context::SearchContext;
 use vantage::search::eval::static_eval;
 use vantage::search::search::{TimeManager, alpha_beta};
 use vantage::search::tt::TranspositionTable;
-use std::str::FromStr;
 
 const INF: i32 = 32000;
 

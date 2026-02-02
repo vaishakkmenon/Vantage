@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io::{self, BufRead, BufReader};
+use std::str::FromStr;
+use std::time::Duration;
 use vantage::board::{Board, Color, Piece};
 use vantage::book::PolyglotBook;
 use vantage::moves::execute::{generate_legal, make_move_basic};
@@ -5,10 +9,6 @@ use vantage::moves::magic::MagicTables;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::Move;
 use vantage::search::search::search;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-use std::str::FromStr;
-use std::time::Duration;
 
 fn main() {
     // Load magic tables once at startup

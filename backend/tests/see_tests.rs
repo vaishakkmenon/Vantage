@@ -1,9 +1,9 @@
+use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::Move;
 use vantage::search::see::SeeExt;
 use vantage::square::Square;
-use std::str::FromStr;
 
 use vantage::moves::magic::MagicTables;
 

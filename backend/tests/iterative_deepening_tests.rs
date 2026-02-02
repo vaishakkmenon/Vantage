@@ -1,12 +1,12 @@
 // Iterative Deepening Test Suite
 // Add to tests/iterative_deepening_tests.rs
 
+use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::search::context::SearchContext;
 use vantage::search::search::{TimeManager, alpha_beta, search}; // Added TimeManager
 use vantage::search::tt::TranspositionTable;
-use std::str::FromStr;
 
 const INF: i32 = 32000;
 

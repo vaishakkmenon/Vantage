@@ -1,9 +1,9 @@
+use std::time::Duration;
 /// Tactical position tests
 /// Verify the engine finds forced mates and wins material
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::search::search::search;
-use std::time::Duration;
 
 #[test]
 fn test_mate_in_1_scholars_mate() {

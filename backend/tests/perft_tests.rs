@@ -174,9 +174,9 @@ mod tests {
 
     #[test]
     fn kiwipete_d2_tally() {
+        use std::str::FromStr;
         use vantage::board::Board;
         use vantage::moves::execute::generate_legal;
-        use std::str::FromStr;
 
         let mut b = Board::from_str(KIWI_FEN).unwrap();
         let tables = load_magic_tables();
@@ -210,8 +210,7 @@ mod tests {
                 }
                 // quick check detector
                 let uu = vantage::moves::execute::make_move_basic(&mut b, *r);
-                let in_chk =
-                    vantage::moves::square_control::in_check(&b, b.side_to_move, &tables);
+                let in_chk = vantage::moves::square_control::in_check(&b, b.side_to_move, &tables);
                 if in_chk {
                     checks += 1;
                 }

@@ -1,4 +1,5 @@
 // tests/zobrist_tests.rs
+use std::str::FromStr;
 use vantage::board::{Board, Color, Piece};
 use vantage::hash::zobrist::zobrist_keys;
 use vantage::moves::types::{Move, PROMOTION, PROMOTION_CAPTURE, QUIET_MOVE};
@@ -9,7 +10,6 @@ use vantage::{
     // hash::zobrist::zobrist_keys,
     square::Square,
 };
-use std::str::FromStr;
 
 // Castling White Kingside
 const CASTLE_WK: u8 = 0b0001;

@@ -1,4 +1,5 @@
 // Diagnostic tests to identify quiescence implementation issues
+use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::execute::{generate_captures, generate_legal};
 use vantage::moves::magic::loader::load_magic_tables;
@@ -7,7 +8,6 @@ use vantage::search::context::SearchContext;
 use vantage::search::eval::static_eval;
 use vantage::search::search::{TimeManager, alpha_beta};
 use vantage::search::tt::TranspositionTable;
-use std::str::FromStr;
 
 const INF: i32 = 32000;
 
@@ -332,12 +332,7 @@ fn diagnostic_quiescence_includes_promotions() {
     let mut captures = Vec::new();
     let mut scratch = Vec::new();
     // Assuming you use generate_captures for Q-search:
-    vantage::moves::execute::generate_captures(
-        &mut board,
-        &tables,
-        &mut captures,
-        &mut scratch,
-    );
+    vantage::moves::execute::generate_captures(&mut board, &tables, &mut captures, &mut scratch);
 
     let has_promo = captures.iter().any(|m| m.is_promotion());
     assert!(

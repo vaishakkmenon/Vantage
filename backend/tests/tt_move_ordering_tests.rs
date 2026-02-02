@@ -1,13 +1,13 @@
 // TT Move Ordering Test Suite
 
+use std::str::FromStr;
+use std::time::Instant;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::Move;
 use vantage::search::context::SearchContext;
 use vantage::search::search::{TimeManager, alpha_beta, search};
 use vantage::search::tt::TranspositionTable;
-use std::str::FromStr;
-use std::time::Instant;
 
 const INF: i32 = 32000;
 

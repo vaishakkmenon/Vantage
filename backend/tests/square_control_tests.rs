@@ -1,5 +1,5 @@
-use vantage::board::{Board, Color};
 use std::str::FromStr;
+use vantage::board::{Board, Color};
 
 use vantage::moves::magic::MagicTables;
 use vantage::moves::magic::loader::load_magic_tables;

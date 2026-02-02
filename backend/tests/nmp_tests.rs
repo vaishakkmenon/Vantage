@@ -1,5 +1,5 @@
-use vantage::board::{Board, Color};
 use std::str::FromStr;
+use vantage::board::{Board, Color};
 
 #[test]
 fn test_has_major_pieces_logic() {

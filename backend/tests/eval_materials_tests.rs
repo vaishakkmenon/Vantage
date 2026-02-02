@@ -1,7 +1,7 @@
+use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::search::eval::{eval_material, static_eval};
-use std::str::FromStr;
 
 #[test]
 fn startpos_material_is_zero() {

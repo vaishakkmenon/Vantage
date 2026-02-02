@@ -7,9 +7,7 @@ use vantage::moves::execute::{make_move_basic, undo_move_basic};
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::{CAPTURE, EN_PASSANT, Move, PROMOTION, QUIET_MOVE};
 use vantage::square::Square;
-use vantage::status::{
-    GameStatus, is_draw_by_fifty_move, is_draw_by_threefold, position_status,
-};
+use vantage::status::{GameStatus, is_draw_by_fifty_move, is_draw_by_threefold, position_status};
 
 // ---- Small helpers ----
 

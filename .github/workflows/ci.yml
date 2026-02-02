@@ -27,7 +27,7 @@ jobs:
     - name: Clippy
       working-directory: ${{ env.WORKING_DIR }}
       # We enable load-magic here too to lint that specific code path
-      run: cargo clippy --features "load-magic" -- -D warnings
+      run: cargo clippy --features "load_magic deterministic_zobrist" -- -D warnings
 
   test:
     name: Run Tests
@@ -64,7 +64,7 @@ jobs:
       env:
         RUSTFLAGS: "-C target-cpu=x86-64"
       # RESTORED: load-magic is back!
-      run: cargo build --release --features "load-magic"
+      run: cargo build --release --features "load_magic deterministic_zobrist"
 
     - name: Upload Engine Artifact
       uses: actions/upload-artifact@v4

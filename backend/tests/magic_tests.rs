@@ -13,9 +13,7 @@ use vantage::moves::magic::precompute::{precompute_bishop_attacks, precompute_ro
 
 // These are only used when we generate magic tables on the fly
 #[cfg(not(feature = "load_magic"))]
-use vantage::moves::magic::precompute::{
-    generate_bishop_magic_tables, generate_rook_magic_tables,
-};
+use vantage::moves::magic::precompute::{generate_bishop_magic_tables, generate_rook_magic_tables};
 
 // These search functions are only used in non-load_magic tests
 #[cfg(not(feature = "load_magic"))]
