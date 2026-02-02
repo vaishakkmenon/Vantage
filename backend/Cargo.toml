@@ -1,0 +1,33 @@
+[package]
+name = "vantage"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+rand = "0.9.1"
+serde = { version = "1.0.219", features = ["derive"] }
+bincode = "1.3"
+arrayvec = "0.7"
+indicatif = "0.18.0"
+tracing = { version = "0.1", features = ["attributes"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tracing-appender = "0.2"
+once_cell = "1.21.3"
+
+[lib]
+name = "vantage"
+path = "src/lib.rs"
+
+[[bin]]
+name = "vantage"
+path = "src/bin/cli.rs"
+
+[features]
+default = ["psqt"]
+load_magic = []
+deterministic_magic = []
+deterministic_zobrist = [] 
+psqt = []
+paranoid_hash = []
+lmr_stats=[]
+aspiration_stats=[]

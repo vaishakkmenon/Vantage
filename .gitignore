@@ -1,0 +1,9 @@
+/backend/target
+**/*.rs.bk
+*.pdb
+.vscode/
+.idea/
+.DS_Store
+*.log
+book.bin
+magic_tables.bin
