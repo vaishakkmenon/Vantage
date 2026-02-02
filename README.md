@@ -1,5 +1,7 @@
 # Vantage ♟️
 
+![Vantage CI](https://github.com/vaishakkmenon/Vantage/actions/workflows/ci.yml/badge.svg)
+
 **Vantage** is a high-performance chess engine developed in **Rust**, designed to explore the intersection of memory safety and raw computational speed. It implements the Universal Chess Interface (UCI) protocol and is compatible with any modern GUI (CuteChess, Arena, Banksia).
 
 ### 🚀 Key Features

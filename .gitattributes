@@ -1,0 +1,7 @@
+# 1. Force LF on all text files
+* text=auto eol=lf
+
+# 2. Keep binary files untouched
+*.bin binary
+*.exe binary
+*.dll binary

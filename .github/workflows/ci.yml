@@ -1,0 +1,74 @@
+name: Vantage CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  WORKING_DIR: ./backend
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+    
+    - name: Check Formatting
+      working-directory: ${{ env.WORKING_DIR }}
+      run: cargo fmt -- --check
+      
+    - name: Clippy
+      working-directory: ${{ env.WORKING_DIR }}
+      # We enable load-magic here too to lint that specific code path
+      run: cargo clippy --features "load-magic" -- -D warnings
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: backend -> target
+
+    - name: Run Tests
+      working-directory: ${{ env.WORKING_DIR }}
+      # RESTORED: load-magic is back!
+      run: cargo test --release --features "load-magic deterministic_zobrist" -- --test-threads=1
+
+  build:
+    name: Build Release EXE
+    needs: [lint, test]
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: backend -> target
+
+    - name: Build Release
+      working-directory: ${{ env.WORKING_DIR }}
+      env:
+        RUSTFLAGS: "-C target-cpu=x86-64"
+      # RESTORED: load-magic is back!
+      run: cargo build --release --features "load-magic"
+
+    - name: Upload Engine Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vantage-chess-engine
+        path: backend/target/release/vantage.exe
+        retention-days: 30
