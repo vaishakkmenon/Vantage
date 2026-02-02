@@ -162,11 +162,12 @@ fn handle_go(parts: &[&str], board: &mut Board, tables: &MagicTables, book: &Opt
     // --- STEP A: Check Opening Book First ---
     // If we have a book, and the board position is in it, play immediately.
     if let Some(b) = book
-        && let Some(book_move) = b.probe(board) {
-            println!("info string Book move found");
-            println!("bestmove {}", book_move.to_uci());
-            return; // EXIT IMMEDIATELY - Do not search!
-        }
+        && let Some(book_move) = b.probe(board)
+    {
+        println!("info string Book move found");
+        println!("bestmove {}", book_move.to_uci());
+        return; // EXIT IMMEDIATELY - Do not search!
+    }
     // ----------------------------------------
     let mut depth = 64;
     let mut time_limit = None;
@@ -308,7 +309,10 @@ fn handle_go(parts: &[&str], board: &mut Board, tables: &MagicTables, book: &Opt
 fn run_epd_tests(path: &str, tables: &MagicTables) {
     let file = match File::open(path) {
         Ok(f) => f,
-        Err(_) => match File::open(format!("bench_arena/{}", path.split('/').next_back().unwrap())) {
+        Err(_) => match File::open(format!(
+            "bench_arena/{}",
+            path.split('/').next_back().unwrap()
+        )) {
             Ok(f) => f,
             Err(_) => {
                 println!("Error: Could not find EPD file at '{}' or local.", path);
@@ -475,10 +479,9 @@ fn san_to_uci(board: &mut Board, san: &str, tables: &MagicTables) -> Option<Stri
                     if from_file != (d as u8 - b'a') {
                         return false;
                     }
-                } else if ('1'..='8').contains(&d)
-                    && from_rank != (d as u8 - b'1') {
-                        return false;
-                    }
+                } else if ('1'..='8').contains(&d) && from_rank != (d as u8 - b'1') {
+                    return false;
+                }
             }
             true
         })

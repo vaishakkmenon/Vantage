@@ -239,7 +239,7 @@ pub fn alpha_beta(
                 }
             }
         }
-    } 
+    }
 
     if depth <= 0 {
         let score = quiescence(board, tables, ctx, tt, ply, alpha, beta, nodes, time);
@@ -543,15 +543,16 @@ pub fn search(
         // Conservative estimate: Next depth takes ~3x longer than previous.
         // (Using 3x instead of 2x because branching factor can spike in tactical positions)
         if depth > 1
-            && let Some(limit) = time.allocated_time() {
-                let total_elapsed = time.elapsed();
-                let predicted_next = last_iter_duration * 3;
+            && let Some(limit) = time.allocated_time()
+        {
+            let total_elapsed = time.elapsed();
+            let predicted_next = last_iter_duration * 3;
 
-                // If predicting the next depth would push us over the limit: STOP.
-                if total_elapsed + predicted_next > limit {
-                    break;
-                }
+            // If predicting the next depth would push us over the limit: STOP.
+            if total_elapsed + predicted_next > limit {
+                break;
             }
+        }
         // -----------------------------------------
 
         for from in 0..64 {

@@ -89,13 +89,15 @@ fn is_pawn_adjacent(board: &Board, ep_sq: Square, side: Color) -> bool {
     };
 
     if let Some(f) = left_file
-        && check_sq(f) {
-            return true;
-        }
+        && check_sq(f)
+    {
+        return true;
+    }
     if let Some(f) = right_file
-        && check_sq(f) {
-            return true;
-        }
+        && check_sq(f)
+    {
+        return true;
+    }
 
     false
 }

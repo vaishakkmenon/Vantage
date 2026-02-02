@@ -137,7 +137,6 @@ fn mop_up_eval(board: &Board, my_color: Color) -> i32 {
     // Reward our king proximity (14 - king_dist, where 14 is max distance)
     // Weights: Edge (10cp per unit), Proximity (4cp per unit)
     // Max bonus: (14*10) + (14*4) = ~196cp
-    
 
     (10 * center_dist) + (4 * (14 - king_dist))
 }

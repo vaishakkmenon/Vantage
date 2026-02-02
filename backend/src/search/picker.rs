@@ -95,9 +95,12 @@ impl MovePicker {
     fn is_killer(&self, mv: Move) -> bool {
         for killer in &self.killers {
             if let Some(k) = killer
-                && mv.from == k.from && mv.to == k.to && mv.promotion == k.promotion {
-                    return true;
-                }
+                && mv.from == k.from
+                && mv.to == k.to
+                && mv.promotion == k.promotion
+            {
+                return true;
+            }
         }
         false
     }
