@@ -29,7 +29,7 @@ jobs:
       run: cargo fmt -- --check
     - name: Clippy
       working-directory: ${{ env.WORKING_DIR }}
-      run: cargo clippy --features "load-magic" -- -D warnings
+      run: cargo clippy --features "load_magic deterministic_zobrist" -- -D warnings
 
   test:
     name: Test (${{ matrix.os }})
@@ -46,7 +46,7 @@ jobs:
         workspaces: backend -> target
     - name: Run Tests
       working-directory: ${{ env.WORKING_DIR }}
-      run: cargo test --release --features "load-magic deterministic_zobrist" -- --test-threads=1
+      run: cargo test --release --features "load_magic deterministic_zobrist" -- --test-threads=1
 
   release:
     name: Release (${{ matrix.os }})
@@ -73,7 +73,7 @@ jobs:
       working-directory: ${{ env.WORKING_DIR }}
       env:
         RUSTFLAGS: "-C target-cpu=x86-64"
-      run: cargo build --release --features "load-magic"
+      run: cargo build --release --features "load_magic deterministic_zobrist"
 
     - name: Prepare Package
       shell: bash
