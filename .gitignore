@@ -8,3 +8,9 @@
 book.bin
 git-config-docker
 .docker/
+
+# Ignore chess engine logs
+*.001
+*.pgn
+*.epd
+*.log

@@ -1,19 +1,20 @@
 # =============================================================================
-# Vantage Chess Engine - Development Environment
+# Vantage Chess Engine - Development Environment (FINAL)
 # =============================================================================
-# Full-featured development image with all tools for:
-# - Rust backend development
-# - Frontend development (Node.js)
-# - Engine testing (cutechess-cli, Stockfish)
-# - ELO evaluation (Ordo)
+# - Base: Ubuntu 24.04
+# - Core: Rust, Node.js (Frontend), Python (Data)
+# - Testing: Cutechess (CMake), Ordo, Stockfish 16
+# - Gauntlet: Crafty, Phalanx, Fairymax (System installs)
+# - Fixes: /usr/games PATH added, Flamegraph removed
 # =============================================================================
 
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
 
 # -----------------------------------------------------------------------------
-# 1. Core System Packages
+# 1. Core System Packages & Utilities
 # -----------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Build essentials
@@ -33,35 +34,46 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Debugging
     gdb \
     valgrind \
-    # Python
+    # Python dependencies
     python3 \
     python3-venv \
     python3-pip \
     python3-dev \
-    # Database (for test results)
+    # Database
     sqlite3 \
     libsqlite3-dev \
     # Process management
     supervisor \
+    # Distributed Testing Utilities
+    openssh-client \
+    rsync \
+    netcat-openbsd \
+    # --- ADDED: SYSTEM CHESS ENGINES ---
+    crafty \
+    phalanx \
+    fairymax \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
 # 2. Chess Testing Infrastructure
 # -----------------------------------------------------------------------------
 
-# Stockfish (anchor engine for Gauntlet)
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends stockfish \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/games/stockfish /usr/local/bin/stockfish
+# [UPGRADED] Stockfish 16 (Anchor Engine)
+# Replaces 'apt-get install stockfish' which installs very old versions.
+RUN cd /tmp \
+    && wget https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-avx2.tar \
+    && tar -xf stockfish-ubuntu-x86-64-avx2.tar \
+    && mv stockfish/stockfish-ubuntu-x86-64-avx2 /usr/local/bin/stockfish \
+    && chmod +x /usr/local/bin/stockfish \
+    && rm -rf /tmp/stockfish*
 
-# cutechess-cli dependencies (Qt5 required for v1.4.0)
+# cutechess-cli dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     qtbase5-dev \
     libqt5svg5-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# cutechess-cli (build from source)
+# [RESTORED] cutechess-cli (Original verified CMake build)
 RUN cd /tmp \
     && git clone --depth 1 --branch v1.4.0 https://github.com/cutechess/cutechess.git \
     && cd cutechess \
@@ -87,7 +99,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && npm install -g npm@latest \
     && rm -rf /var/lib/apt/lists/*
 
-# Frontend tooling (add more as needed)
+# Frontend tooling
 RUN npm install -g \
     typescript \
     @anthropic-ai/claude-code
@@ -101,6 +113,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable \
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Rust development tools
+# (Removed cargo-flamegraph as requested)
 RUN rustup component add clippy rustfmt \
     && cargo install cargo-watch
 
@@ -147,6 +160,9 @@ RUN cd /openings \
 # -----------------------------------------------------------------------------
 # 7. Environment Variables
 # -----------------------------------------------------------------------------
+# [CRITICAL FIX] Add /usr/games to PATH so python can find Crafty/Phalanx/Fairymax
+ENV PATH="/usr/games:${PATH}"
+
 ENV ENGINES_DIR="/engines"
 ENV ANCHORS_DIR="/engines/anchors"
 ENV CANDIDATES_DIR="/engines/candidates"
