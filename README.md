@@ -1,4 +1,4 @@
-# Vantage ♟️
+# Vantage
 
 [![Vantage CI](https://github.com/vaishakkmenon/Vantage/actions/workflows/ci.yml/badge.svg)](https://github.com/vaishakkmenon/Vantage/actions/workflows/ci.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
