@@ -1,0 +1,61 @@
+# =============================================================================
+# Vantage - Production Environment
+# =============================================================================
+# Usage:
+#   docker compose -f docker-compose.prod.yml build
+#   docker compose -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Chess Engine (UCI interface)
+  # ---------------------------------------------------------------------------
+  engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.engine
+    image: vantage-engine:latest
+    container_name: vantage-engine
+    restart: unless-stopped
+    # Engine communicates via stdin/stdout, typically invoked by backend
+    stdin_open: true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2'
+
+  # ---------------------------------------------------------------------------
+  # Web Frontend
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    image: vantage-web:latest
+    container_name: vantage-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+
+  # ---------------------------------------------------------------------------
+  # Backend API (uncomment and configure when ready)
+  # ---------------------------------------------------------------------------
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile.api
+  #   image: vantage-api:latest
+  #   container_name: vantage-api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - DATABASE_URL=sqlite:///data/vantage.db
+  #   depends_on:
+  #     - engine

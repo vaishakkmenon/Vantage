@@ -1,0 +1,65 @@
+# =============================================================================
+# Docker Build Context Exclusions
+# =============================================================================
+
+# Git
+.git
+.gitignore
+.githooks
+
+# Documentation (not needed in image)
+*.md
+
+# IDE/Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Rust build artifacts
+target/
+Cargo.lock
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# Test artifacts
+*.pgn
+*.epd
+results/
+
+# Credentials - NEVER include
+.env
+.env.*
+*.pem
+*.key
+credentials*
+git-credentials
+.git-credentials
+git-config-docker
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

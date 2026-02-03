@@ -1,0 +1,23 @@
+# =============================================================================
+# Git Configuration for Docker Container
+# =============================================================================
+# Copy this file to 'git-config-docker' and update with your details
+# DO NOT commit the filled-in version with real credentials
+# =============================================================================
+
+[user]
+    name = Your Name
+    email = your.email@example.com
+
+[credential]
+    helper = store --file=/workspace/.git/git-credentials
+
+[safe]
+    directory = /workspace
+
+[core]
+    autocrlf = input
+    eol = lf
+
+[pull]
+    rebase = false

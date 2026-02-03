@@ -1,0 +1,42 @@
+# =============================================================================
+# Vantage - Development Environment
+# =============================================================================
+# Usage:
+#   docker compose build
+#   docker compose up -d
+#   docker compose exec dev bash
+# =============================================================================
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    image: vantage-dev
+    container_name: vantage-dev
+    volumes:
+      - .:/workspace
+      - ./git-config-docker:/root/.gitconfig:ro
+      # Persist test results and engines across rebuilds
+      - vantage-results:/results
+      - vantage-engines:/engines
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    ports:
+      # Frontend dev server (adjust port as needed)
+      - "3000:3000"
+      - "5173:5173"  # Vite default
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 2G
+
+volumes:
+  vantage-results:
+    name: vantage-results
+  vantage-engines:
+    name: vantage-engines

@@ -1,0 +1,44 @@
+# =============================================================================
+# Vantage Chess Frontend - Production Build
+# =============================================================================
+# Multi-stage build for minimal production image
+# Adjust based on your frontend framework (React/Vue/Svelte/etc.)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build
+# -----------------------------------------------------------------------------
+FROM node:20-alpine AS builder
+
+WORKDIR /build
+
+# Copy package files first (better layer caching)
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source and build
+COPY frontend/ .
+RUN npm run build
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime (nginx to serve static files)
+# -----------------------------------------------------------------------------
+FROM nginx:alpine
+
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy custom nginx config
+COPY docker/nginx.conf /etc/nginx/conf.d/
+
+# Copy built assets from builder
+COPY --from=builder /build/dist /usr/share/nginx/html
+
+# Non-root user (nginx alpine supports this)
+RUN chown -R nginx:nginx /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

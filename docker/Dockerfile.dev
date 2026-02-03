@@ -1,0 +1,162 @@
+# =============================================================================
+# Vantage Chess Engine - Development Environment
+# =============================================================================
+# Full-featured development image with all tools for:
+# - Rust backend development
+# - Frontend development (Node.js)
+# - Engine testing (cutechess-cli, Stockfish)
+# - ELO evaluation (Ordo)
+# =============================================================================
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# -----------------------------------------------------------------------------
+# 1. Core System Packages
+# -----------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build essentials
+    build-essential \
+    cmake \
+    pkg-config \
+    # Version control
+    git \
+    # Utilities
+    curl \
+    wget \
+    unzip \
+    ca-certificates \
+    # Editors
+    vim \
+    nano \
+    # Debugging
+    gdb \
+    valgrind \
+    # Python
+    python3 \
+    python3-venv \
+    python3-pip \
+    python3-dev \
+    # Database (for test results)
+    sqlite3 \
+    libsqlite3-dev \
+    # Process management
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
+# 2. Chess Testing Infrastructure
+# -----------------------------------------------------------------------------
+
+# Stockfish (anchor engine for Gauntlet)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends stockfish \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/games/stockfish /usr/local/bin/stockfish
+
+# cutechess-cli dependencies (Qt5 required for v1.4.0)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    qtbase5-dev \
+    libqt5svg5-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# cutechess-cli (build from source)
+RUN cd /tmp \
+    && git clone --depth 1 --branch v1.4.0 https://github.com/cutechess/cutechess.git \
+    && cd cutechess \
+    && cmake -B build -DCMAKE_BUILD_TYPE=Release -DWITH_TESTS=OFF \
+    && cmake --build build -j$(nproc) \
+    && cp build/cutechess-cli /usr/local/bin/ \
+    && chmod +x /usr/local/bin/cutechess-cli \
+    && rm -rf /tmp/cutechess
+
+# Ordo (ELO rating calculator)
+RUN cd /tmp \
+    && git clone --depth 1 https://github.com/michiguel/Ordo.git \
+    && cd Ordo \
+    && make \
+    && cp ordo /usr/local/bin/ \
+    && rm -rf /tmp/Ordo
+
+# -----------------------------------------------------------------------------
+# 3. Node.js (Frontend + Claude Code)
+# -----------------------------------------------------------------------------
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@latest \
+    && rm -rf /var/lib/apt/lists/*
+
+# Frontend tooling (add more as needed)
+RUN npm install -g \
+    typescript \
+    @anthropic-ai/claude-code
+
+# -----------------------------------------------------------------------------
+# 4. Rust Toolchain
+# -----------------------------------------------------------------------------
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable \
+    && echo 'source /root/.cargo/env' >> /root/.bashrc
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Rust development tools
+RUN rustup component add clippy rustfmt \
+    && cargo install cargo-watch
+
+# -----------------------------------------------------------------------------
+# 5. Python Environment
+# -----------------------------------------------------------------------------
+RUN python3 -m venv /venv
+
+ENV PATH="/venv/bin:${PATH}"
+ENV VIRTUAL_ENV="/venv"
+
+RUN pip install --upgrade pip && pip install \
+    # Development tools
+    black \
+    flake8 \
+    mypy \
+    pytest \
+    pytest-timeout \
+    # Data handling
+    pandas \
+    sqlalchemy \
+    # Utilities
+    click \
+    rich \
+    pyyaml \
+    toml \
+    # Chess
+    python-chess
+
+# -----------------------------------------------------------------------------
+# 6. Testing Infrastructure Directories
+# -----------------------------------------------------------------------------
+RUN mkdir -p /engines/anchors \
+    && mkdir -p /engines/candidates \
+    && mkdir -p /openings \
+    && mkdir -p /results/pgn \
+    && mkdir -p /results/db
+
+# Opening book for balanced testing
+RUN cd /openings \
+    && wget -q https://raw.githubusercontent.com/official-stockfish/books/master/2moves_v2.pgn \
+    || echo "# Opening book download failed - add manually" > /openings/README.txt
+
+# -----------------------------------------------------------------------------
+# 7. Environment Variables
+# -----------------------------------------------------------------------------
+ENV ENGINES_DIR="/engines"
+ENV ANCHORS_DIR="/engines/anchors"
+ENV CANDIDATES_DIR="/engines/candidates"
+ENV OPENINGS_DIR="/openings"
+ENV RESULTS_DIR="/results"
+
+# -----------------------------------------------------------------------------
+# 8. Workspace
+# -----------------------------------------------------------------------------
+WORKDIR /workspace
+VOLUME ["/workspace"]
+
+ENTRYPOINT ["bash"]
