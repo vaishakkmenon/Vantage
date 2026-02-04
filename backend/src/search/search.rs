@@ -241,17 +241,17 @@ pub fn alpha_beta(
         }
     }
 
-    if depth <= 0 {
-        let score = quiescence(board, tables, ctx, tt, ply, alpha, beta, nodes, time);
-        return (score, None);
-    }
-
     let in_check_now = in_check(board, board.side_to_move, tables);
 
     // FIX 6: CHECK EXTENSION
     // If we are in check, extend the search by 1 ply.
     // This resolves forced mates and prevents the horizon effect.
     let extension = if in_check_now { 1 } else { 0 };
+
+    if depth <= 0 && !in_check_now {
+        let score = quiescence(board, tables, ctx, tt, ply, alpha, beta, nodes, time);
+        return (score, None);
+    }
 
     // [STEP 1] Calculate Eval Early
     // We lift this out so both RFP and SFP can share it.
@@ -270,16 +270,22 @@ pub fn alpha_beta(
     }
     // =============================================================
 
-    // NULL MOVE PRUNING DEPTH
+    // =============================================================
+    // 1. NULL MOVE PRUNING (Tuned)
+    // =============================================================
     if depth >= 4
         && !in_check_now
-        && (beta - alpha == 1)
+        // REMOVED: && (beta - alpha == 1) <--- Unlocks NMP for PV nodes (Massive speedup)
         && board.has_major_pieces(board.side_to_move)
+        && static_eval_val >= beta
+    // Only null move if we are already winning statically
     {
-        let r = 2;
+        // Dynamic Reduction: If deep, reduce more.
+        let r = if depth > 6 { 3 } else { 2 };
+
         let undo = make_null_move(board);
 
-        // Pass beta - 1 as alpha, beta as beta (Zero Window)
+        // Scout search with Null Window
         let (val, _) = alpha_beta(
             board,
             tables,
@@ -296,8 +302,12 @@ pub fn alpha_beta(
         undo_null_move(board, undo);
 
         if score >= beta && !time.stop_signal {
-            // Don't save null move results to TT to avoid polluting standard search
-            return (beta, None);
+            // Verification search for high depths (Optional safety)
+            if score >= MATE_THRESHOLD {
+                // Don't trust null move mates, search normally
+            } else {
+                return (beta, None);
+            }
         }
     }
 
@@ -368,36 +378,42 @@ pub fn alpha_beta(
             );
             score = -val;
         } else {
-            // [STEP 3] LINEAR LMR (Aggressive Formula + History Safety)
+            // =========================================================
+            // 2. LATE MOVE REDUCTION (Tuned: Soft Formula)
+            // =========================================================
             let mut r = 0;
             if depth > LMR_MIN_DEPTH
                 && move_count > LMR_MIN_MOVES as usize
                 && !mv.is_capture()
                 && !mv.is_promotion()
+                && !in_check_now
+            // Don't reduce if we are escaping check!
             {
-                // [FIX] Return to Sledgehammer Formula for SPEED
-                // 1 + depth/3 + moves/10
-                r = 1 + (depth / 3) + (move_count as i32 / 10);
+                // OLD (Suicidal): 1 + (depth / 3) + (move_count / 10)
 
-                // [SAFETY] Keep the History Protection we added
-                // This ensures we don't crush good moves too hard
+                // NEW (Standard):
+                // 1. Base reduction
+                r = 1 + (depth / 8) + (move_count as i32 / 20);
+
+                // 2. History Safety (Keep this, it's good)
                 let history = ctx.history[mv.from.index() as usize][mv.to.index() as usize];
                 if history > FP_HISTORY_THRESHOLD {
-                    // Threshold is 512
+                    r -= 1; // Trust history
+                }
+
+                // 3. PV Node Safety
+                // If we are in a PV node (open window), reduce less
+                if beta - alpha > 1 {
                     r -= 1;
                 }
 
-                // PV Protection
-                if beta - alpha > 1 {
-                    r = (r * 2) / 3;
-                }
-
+                // Clamp
                 if r < 0 {
                     r = 0;
                 }
-                if r > depth - 1 {
-                    r = depth - 1;
-                }
+                if r > depth - 2 {
+                    r = depth - 2;
+                } // Leave at least depth 1
             }
 
             // Perform the Reduced Search (Zero Window)

@@ -12,7 +12,7 @@ services:
       - .:/workspace
       - ./git-config-docker:/root/.gitconfig:ro
       - ./data/results:/results
-      - ./data/engines:/engines
+      # - ./data/engines:/engines
       - ./data/books:/openings
 
     working_dir: /workspace

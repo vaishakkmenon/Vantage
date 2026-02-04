@@ -5,6 +5,7 @@ import os
 # The roster of engines we expect to find
 engines = [
     {"name": "Stockfish", "cmd": "stockfish"},      # System (Manual install)
+    {"name": "Ethereal",  "cmd": "ethereal-chess"}, # System (apt)
     {"name": "Phalanx",   "cmd": "phalanx"},        # System (apt)
     {"name": "Fairymax",  "cmd": "fairymax"},       # System (apt)
     {"name": "Crafty",    "cmd": "crafty"},         # System (apt)
