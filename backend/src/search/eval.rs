@@ -10,6 +10,11 @@ const DOUBLED_PAWN_PENALTY: i32 = -10;
 const LAZY_EVAL_MARGIN: i32 = 200;
 const KING_ZONE_ATTACK_PENALTY: i32 = 15;
 
+// [NEW] Feature constants
+const KING_SHIELD_BONUS: i32 = 20; // Bonus for having a pawn shield
+const KING_OPEN_FILE_PENALTY: i32 = -30; // Penalty for standing on an open file
+const BLOCKED_PASSER_PENALTY: i32 = -50; // Penalty if a passed pawn is blocked
+
 // Passed pawn bonus by rank (index 0 = rank 1, index 7 = rank 8)
 // Higher bonus for pawns closer to promotion
 // TUNED: Increased 6th/7th rank bonuses significantly based on Crafty match analysis
@@ -182,17 +187,64 @@ pub fn static_eval(board: &Board, tables: &MagicTables, alpha: i32, beta: i32) -
     // 3. Positional Terms
     score += eval_mobility(board, tables, side) - eval_mobility(board, tables, enemy);
 
-    // Fix: Use the standard evaluate_pawn_structure and flip for perspective
+    // [MODIFIED] Uses updated evaluate_pawn_structure with blocked logic
     score += evaluate_pawn_structure(board) * color_multiplier;
 
-    // 4. Phased King Safety
+    // 4. Phased King Safety (Attacks)
     // Subtracting enemy attacks on our king, adding our attacks on theirs.
     score += calculate_phased_safety(board, side, tables)
         - calculate_phased_safety(board, enemy, tables);
 
-    // 5. Mop-Up Evaluation (Endgame King Confinement)
+    // [NEW] 5. King Shield Safety (Passive)
+    score += evaluate_king_shield(board, side) - evaluate_king_shield(board, enemy);
+
+    // 6. Mop-Up Evaluation (Endgame King Confinement)
     score += mop_up_eval(board, side);
 
+    score
+}
+
+// [NEW] Calculates bonus for friendly pawns in front of the King
+fn evaluate_king_shield(board: &Board, color: Color) -> i32 {
+    let king_sq_mask = board.pieces(Piece::King, color);
+    if king_sq_mask == 0 {
+        return 0;
+    }
+
+    let king_sq = king_sq_mask.trailing_zeros() as usize;
+    let mut score = 0;
+
+    // White King at e1 (Rank 0) needs shield at Rank 1
+    let shield_rank = if color == Color::White {
+        king_sq / 8 + 1
+    } else {
+        king_sq / 8 - 1
+    };
+
+    // Avoid checking off-board (rank 8 or -1 equivalent)
+    if shield_rank < 8 {
+        let king_file = king_sq % 8;
+        let us_pawns = board.pieces(Piece::Pawn, color);
+
+        // Check file, left file, right file, being careful with edges
+        let min_file = king_file.saturating_sub(1);
+        let max_file = (king_file + 1).min(7);
+
+        let mut shield_count = 0;
+        for f in min_file..=max_file {
+            let shield_sq = shield_rank * 8 + f;
+            if (us_pawns & (1 << shield_sq)) != 0 {
+                shield_count += 1;
+            }
+        }
+
+        score += shield_count * KING_SHIELD_BONUS;
+
+        // Penalty for ZERO shield on an open file
+        if shield_count == 0 {
+            score += KING_OPEN_FILE_PENALTY;
+        }
+    }
     score
 }
 
@@ -406,6 +458,16 @@ pub fn evaluate_pawn_structure(board: &Board) -> i32 {
         if (bp & file_mask & front_mask) == 0 {
             let mut bonus = PASSED_PAWN_BONUS[rank];
 
+            // [NEW] Blocked Penalty (White)
+            // If rank < 7, check the square immediately in front
+            if rank < 7 {
+                let stop_sq = sq + 8;
+                // Check if black piece is there
+                if (board.occupancy(Color::Black) & (1u64 << stop_sq)) != 0 {
+                    bonus += BLOCKED_PASSER_PENALTY;
+                }
+            }
+
             // King Proximity ("Tether"): For advanced passers (rank 5+),
             // reward our king being close and enemy king being far
             if rank >= 4 {
@@ -448,6 +510,16 @@ pub fn evaluate_pawn_structure(board: &Board) -> i32 {
         if (wp & file_mask & front_mask) == 0 {
             // Mirror rank for bonus (rank 1 for black = close to promotion)
             let mut bonus = PASSED_PAWN_BONUS[7 - rank];
+
+            // [NEW] Blocked Penalty (Black)
+            // If rank > 0, check the square immediately in front (index - 8)
+            if rank > 0 {
+                let stop_sq = sq - 8;
+                // Check if white piece is there
+                if (board.occupancy(Color::White) & (1u64 << stop_sq)) != 0 {
+                    bonus += BLOCKED_PASSER_PENALTY;
+                }
+            }
 
             // King Proximity ("Tether"): For advanced passers (rank 4 or less),
             // reward our king being close and enemy king being far
@@ -625,5 +697,29 @@ mod tests {
         let black_eval = static_eval(&black_board, &tables, -i32::MAX, i32::MAX);
 
         assert_eq!(white_eval, -black_eval, "Eval should be symmetric");
+    }
+
+    #[test]
+    fn test_king_shield_bonus() {
+        let tables = load_magic_tables();
+        // Safe: White King on G1, Pawns on F2, G2, H2 (Standard King Side Castle)
+        let safe = Board::from_str("rnbq1rk1/pppp1ppp/8/8/8/8/PPP1PPPP/RNBQKB1R w KQ - 0 1")
+            .expect("Invalid Safe FEN");
+
+        // Unsafe: Same position, but Rank 2 is empty ("8") -> No pawns shielding the King
+        // [FIX] Changed invalid "31333" to "8"
+        let unsafe_board = Board::from_str("rnbq1rk1/pppp1ppp/8/8/8/8/8/RNBQKB1R w KQ - 0 1")
+            .expect("Invalid Unsafe FEN");
+
+        let s1 = static_eval(&safe, &tables, -10000, 10000);
+        let s2 = static_eval(&unsafe_board, &tables, -10000, 10000);
+
+        // The safe board should score HIGHER because of KING_SHIELD_BONUS
+        assert!(
+            s1 > s2,
+            "Safe king ({}) should score higher than naked king ({})",
+            s1,
+            s2
+        );
     }
 }
