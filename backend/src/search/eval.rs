@@ -212,18 +212,26 @@ fn evaluate_king_shield(board: &Board, color: Color) -> i32 {
     }
 
     let king_sq = king_sq_mask.trailing_zeros() as usize;
+    let king_file = king_sq % 8;
+
+    // [FIX] Skip shield evaluation for center kings (files D/E = indices 3/4)
+    // Shield concept only applies to castled/flank kings
+    if (3..=4).contains(&king_file) {
+        return 0;
+    }
+
     let mut score = 0;
 
     // White King at e1 (Rank 0) needs shield at Rank 1
+    // [FIX] Use saturating_sub for Black to avoid underflow on rank 0
     let shield_rank = if color == Color::White {
         king_sq / 8 + 1
     } else {
-        king_sq / 8 - 1
+        (king_sq / 8).saturating_sub(1)
     };
 
     // Avoid checking off-board (rank 8 or -1 equivalent)
     if shield_rank < 8 {
-        let king_file = king_sq % 8;
         let us_pawns = board.pieces(Piece::Pawn, color);
 
         // Check file, left file, right file, being careful with edges
@@ -720,6 +728,32 @@ mod tests {
             "Safe king ({}) should score higher than naked king ({})",
             s1,
             s2
+        );
+    }
+
+    #[test]
+    fn test_center_king_no_shield_bonus() {
+        // King on e1 (center, file 4) should NOT get shield bonus
+        // King on g1 (castled, file 6) SHOULD get shield bonus
+        let center = Board::from_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+            .expect("Invalid center FEN");
+        // Castled position: King on g1 with pawns f2,g2,h2
+        // FEN rank 1: RNBQ1RK1 puts King on g1 (index 6)
+        let castled = Board::from_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1RK1 w kq - 0 1")
+            .expect("Invalid castled FEN");
+
+        let center_shield = evaluate_king_shield(&center, Color::White);
+        let castled_shield = evaluate_king_shield(&castled, Color::White);
+
+        assert_eq!(
+            center_shield, 0,
+            "Center king (e1) should get no shield bonus, got {}",
+            center_shield
+        );
+        assert!(
+            castled_shield > 0,
+            "Castled king (g1) should get shield bonus, got {}",
+            castled_shield
         );
     }
 }
