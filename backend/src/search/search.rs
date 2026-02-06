@@ -540,13 +540,13 @@ pub fn alpha_beta(
 pub fn search(
     board: &mut Board,
     tables: &MagicTables,
+    tt: &mut TranspositionTable,
     max_depth: i32,
     time_limit: Option<Duration>,
 ) -> (i32, Option<Move>) {
     let mut last_completed_best_move = None;
     let mut last_completed_best_score = 0;
     let mut nodes = 0;
-    let mut tt = TranspositionTable::new(512);
     let mut ctx = SearchContext::new();
     let mut time = TimeManager::new(time_limit);
     let mut last_iter_duration = Duration::from_millis(0);
@@ -594,7 +594,7 @@ pub fn search(
         loop {
             // Perform the search with the current window
             let result = alpha_beta(
-                board, tables, &mut ctx, &mut tt, depth, 0, alpha, beta, &mut nodes, &mut time,
+                board, tables, &mut ctx, tt, depth, 0, alpha, beta, &mut nodes, &mut time,
             );
 
             score = result.0;

@@ -1,7 +1,8 @@
 use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
-use vantage::search::search::search; // Updated API
+use vantage::search::search::search;
+use vantage::search::tt::TranspositionTable;
 
 #[test]
 fn test_aspiration_finds_correct_move() {
@@ -10,7 +11,13 @@ fn test_aspiration_finds_correct_move() {
     let tables = load_magic_tables();
 
     // Search depth 6 (triggers aspiration windows which start > depth 4)
-    let (score, best_move) = search(&mut board, &tables, 6, None);
+    let (score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        6,
+        None,
+    );
 
     assert!(best_move.is_some(), "Should find a best move");
     assert!(score > 20000, "Should recognize mate, got score {}", score);
@@ -24,7 +31,13 @@ fn test_aspiration_handles_score_drop() {
             .unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(&mut board, &tables, 6, None);
+    let (score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        6,
+        None,
+    );
 
     assert!(best_move.is_some());
     assert!(score.abs() < 500);
@@ -38,7 +51,13 @@ fn test_aspiration_handles_score_jump() {
             .unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(&mut board, &tables, 6, None);
+    let (score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        6,
+        None,
+    );
 
     assert!(best_move.is_some());
     assert!(score > -500); // Loose check, just ensure it doesn't crash or return -INF
@@ -53,7 +72,13 @@ fn test_aspiration_performance() {
     let tables = load_magic_tables();
 
     let start = Instant::now();
-    let (_score, best_move) = search(&mut board, &tables, 7, None);
+    let (_score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        7,
+        None,
+    );
     let duration = start.elapsed();
 
     println!("Aspiration Search to depth 7 took: {:?}", duration);

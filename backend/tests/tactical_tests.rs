@@ -4,6 +4,7 @@ use std::time::Duration;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::search::search::search;
+use vantage::search::tt::TranspositionTable;
 
 #[test]
 fn test_mate_in_1_scholars_mate() {
@@ -15,7 +16,13 @@ fn test_mate_in_1_scholars_mate() {
     let tables = load_magic_tables();
 
     // Search should recognize this is a very bad position for Black
-    let (score, _best_move) = search(&mut board, &tables, 1, Some(Duration::from_secs(5)));
+    let (score, _best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        1,
+        Some(Duration::from_secs(5)),
+    );
 
     // Black is in a lost position (should have very negative score from Black's perspective)
     assert!(
@@ -34,7 +41,13 @@ fn test_back_rank_mate() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (_score, best_move) = search(&mut board, &tables, 3, Some(Duration::from_secs(10)));
+    let (_score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        3,
+        Some(Duration::from_secs(10)),
+    );
 
     // Should find the back rank mate
     let mv = best_move.expect("Should find a move");
@@ -51,7 +64,13 @@ fn test_capture_hanging_queen() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(&mut board, &tables, 2, Some(Duration::from_secs(5)));
+    let (score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        2,
+        Some(Duration::from_secs(5)),
+    );
 
     // Should recognize massive material advantage after capturing queen
     // Score should be around +900 (queen) from Black's perspective
@@ -77,7 +96,13 @@ fn test_avoid_hanging_piece() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (_score, best_move) = search(&mut board, &tables, 3, Some(Duration::from_secs(5)));
+    let (_score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        3,
+        Some(Duration::from_secs(5)),
+    );
 
     let mv = best_move.expect("Should find a move");
     let move_uci = mv.to_uci();
@@ -96,7 +121,13 @@ fn test_fork_opportunity() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, _best_move) = search(&mut board, &tables, 4, Some(Duration::from_secs(10)));
+    let (score, _best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        4,
+        Some(Duration::from_secs(10)),
+    );
 
     // Should recognize this is a good position for black
     // Score from Black's perspective should be positive (engine returns from side-to-move perspective)
@@ -112,7 +143,13 @@ fn test_starting_position_sanity() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(&mut board, &tables, 3, Some(Duration::from_secs(5)));
+    let (score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        3,
+        Some(Duration::from_secs(5)),
+    );
 
     // Should return some standard opening move
     assert!(
@@ -136,7 +173,13 @@ fn test_piece_up_advantage() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, _best_move) = search(&mut board, &tables, 2, Some(Duration::from_secs(5)));
+    let (score, _best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        2,
+        Some(Duration::from_secs(5)),
+    );
 
     // Should recognize queen advantage (~900 centipawns)
     // From White's perspective, should be very positive
@@ -155,7 +198,13 @@ fn test_piece_down_disadvantage() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, _best_move) = search(&mut board, &tables, 2, Some(Duration::from_secs(5)));
+    let (score, _best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        2,
+        Some(Duration::from_secs(5)),
+    );
 
     // Should recognize huge disadvantage
     // From White's perspective (side to move), should be very negative

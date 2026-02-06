@@ -9,12 +9,14 @@ use vantage::moves::magic::MagicTables;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::Move;
 use vantage::search::search::search;
+use vantage::search::tt::TranspositionTable;
 
 fn main() {
     // Load magic tables once at startup
     let magic_tables = load_magic_tables();
 
     let mut board = Board::new(); // Start position
+    let mut tt = TranspositionTable::new(512);
 
     let book = PolyglotBook::load("book.bin").ok();
     if book.is_some() {
@@ -43,6 +45,7 @@ fn main() {
             "isready" => println!("readyok"),
             "ucinewgame" => {
                 board = Board::new();
+                tt.clear();
             }
             "position" => {
                 if let Some(new_board) = handle_position(&parts, &magic_tables) {
@@ -50,7 +53,7 @@ fn main() {
                 }
             }
             "go" => {
-                handle_go(&parts, &mut board, &magic_tables, &book);
+                handle_go(&parts, &mut board, &magic_tables, &book, &mut tt);
             }
             "fen" => {
                 println!("{}", board.to_fen());
@@ -158,7 +161,13 @@ fn parse_uci_move(board: &Board, move_str: &str, tables: &MagicTables) -> Option
     None
 }
 
-fn handle_go(parts: &[&str], board: &mut Board, tables: &MagicTables, book: &Option<PolyglotBook>) {
+fn handle_go(
+    parts: &[&str],
+    board: &mut Board,
+    tables: &MagicTables,
+    book: &Option<PolyglotBook>,
+    tt: &mut TranspositionTable,
+) {
     // --- STEP A: Check Opening Book First ---
     // If we have a book, and the board position is in it, play immediately.
     if let Some(b) = book
@@ -296,7 +305,7 @@ fn handle_go(parts: &[&str], board: &mut Board, tables: &MagicTables, book: &Opt
     if let Some(limit) = time_limit {
         println!("info string Target time: {}ms", limit.as_millis());
     }
-    let (_score, best_move) = search(board, tables, depth, time_limit);
+    let (_score, best_move) = search(board, tables, tt, depth, time_limit);
 
     if let Some(m) = best_move {
         println!("bestmove {}", m.to_uci());
@@ -353,8 +362,9 @@ fn run_epd_tests(path: &str, tables: &MagicTables) {
             // Fixed 1.0s search for testing
             let time_limit = Some(Duration::from_millis(1000));
             let depth = 64;
+            let mut tt = TranspositionTable::new(512);
 
-            let (_score, best_move) = search(&mut board, tables, depth, time_limit);
+            let (_score, best_move) = search(&mut board, tables, &mut tt, depth, time_limit);
 
             let result_str = match best_move {
                 Some(m) => m.to_uci(),

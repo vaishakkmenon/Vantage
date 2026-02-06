@@ -70,7 +70,13 @@ fn test_iterative_deepening_uses_tt_moves() {
     // because TT moves from depth N-1 help search depth N
 
     // Note: 'search' implements iterative deepening internally
-    let (score, best_move) = search(&mut board, &tables, 5, None);
+    let (score, best_move) = search(
+        &mut board,
+        &tables,
+        &mut TranspositionTable::new(512),
+        5,
+        None,
+    );
 
     println!("ID depth 5: score={}, move={:?}", score, best_move);
 

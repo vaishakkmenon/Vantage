@@ -18,28 +18,30 @@ DEFAULT_GAMES_PER_ROUND = 20
 
 # The Gauntlet Roster
 ALL_OPPONENTS = {
-    # --- Level 1: Sanity Check ---
-    "tscp": {"name": "TSCP", "cmd": "/engines/tscp", "elo": "1700", "proto": "xboard", "use_book": False},
+    # --- Level 1: Sanity Check (~1700) ---
+    "tscp": {"name": "TSCP", "cmd": "/engines/tscp", "elo": "1724", "proto": "xboard", "use_book": False},
 
-    # --- Level 2: Club Player ---
-    "fairymax": {"name": "Fairymax", "cmd": "/engines/fairymax", "elo": "2000", "proto": "xboard", "use_book": True},
+    # --- Level 2: Club Player (~1900) ---
+    "fairymax": {"name": "Fairymax", "cmd": "/engines/fairymax", "elo": "1890", "proto": "xboard", "use_book": True},
 
-    # --- Level 3: Master Strength ---
-    "crafty": {"name": "Crafty", "cmd": "/engines/crafty", "elo": "2300", "proto": "xboard", "use_book": True},
-    "phalanx": {"name": "Phalanx", "cmd": "/engines/phalanx", "elo": "2400", "proto": "xboard", "use_book": True},
+    # --- Level 3: Expert (~2600) ---
+    "phalanx": {"name": "Phalanx", "cmd": "/engines/phalanx", "elo": "2600", "proto": "xboard", "use_book": True},
 
-    # --- Level 4: Grandmaster Strength ---
-    "fruit": {"name": "Fruit", "cmd": "/engines/fruit", "elo": "2800", "proto": "uci", "use_book": True},
+    # --- Level 4: Strong Expert (~2700) ---
+    "fruit": {"name": "Fruit", "cmd": "/engines/fruit", "elo": "2700", "proto": "uci", "use_book": True},
 
-    # --- Level 5: Superhuman ---
-    "ethereal": {"name": "Ethereal", "cmd": "/engines/ethereal", "elo": "3050", "proto": "uci", "use_book": True},
+    # --- Level 5: Near-Master Engine (~2950) ---
+    "crafty": {"name": "Crafty", "cmd": "/engines/crafty", "elo": "2950", "proto": "xboard", "use_book": True},
 
-    # --- Level 6: God Mode ---
-    "stockfish": {"name": "Stockfish", "cmd": "/engines/stockfish", "elo": "3500", "proto": "uci", "use_book": True},
+    # --- Level 6: Superhuman (~3450) ---
+    "ethereal": {"name": "Ethereal", "cmd": "/engines/ethereal", "elo": "3450", "proto": "uci", "use_book": True},
+
+    # --- Level 7: God Mode (~3620) ---
+    "stockfish": {"name": "Stockfish", "cmd": "/engines/stockfish", "elo": "3620", "proto": "uci", "use_book": True},
 }
 
 # Default opponents when running full gauntlet (no --opponent specified)
-DEFAULT_OPPONENTS = ["crafty"]
+DEFAULT_OPPONENTS = ["tscp", "fairymax", "phalanx", "fruit", "crafty", "ethereal", "stockfish"]
 
 # =============================================================================
 # LOGIC
