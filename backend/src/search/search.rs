@@ -480,7 +480,7 @@ pub fn alpha_beta(
             }
             if score >= beta {
                 // TT SAVE WITH MATE SCORE ADJUSTMENT (LowerBound/Beta Cutoff)
-                let tt_score = score_to_tt(beta, ply as i32);
+                let tt_score = score_to_tt(score, ply as i32);
                 tt.save(
                     hash,
                     Some(mv),
