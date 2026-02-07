@@ -8,6 +8,7 @@
 book.bin
 git-config-docker
 .docker/
+.claude/
 
 # Ignore chess engine logs
 *.001

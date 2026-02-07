@@ -123,11 +123,29 @@ pub fn quiescence(
         return static_eval(board, tables, alpha, beta);
     }
 
+    let original_alpha = alpha;
+    let hash = board.zobrist;
+
+    // TT probe — may give immediate cutoff before any evaluation
+    if let Some((_, raw_score, _tt_depth, tt_bound)) = tt.probe(hash, 0, alpha, beta, ply as i32) {
+        let tt_score = score_from_tt(raw_score, ply as i32);
+        match tt_bound {
+            0 => return tt_score,                      // Exact
+            1 if tt_score >= beta => return tt_score,  // LowerBound
+            2 if tt_score <= alpha => return tt_score, // UpperBound
+            _ => {}
+        }
+    }
+
     let stand_pat = static_eval(board, tables, alpha, beta);
 
     if stand_pat >= beta {
         return beta;
     }
+
+    let mut best_score = stand_pat;
+    let mut best_move: Option<Move> = None;
+
     if stand_pat >= alpha {
         alpha = stand_pat;
     }
@@ -173,13 +191,38 @@ pub fn quiescence(
         let score = -quiescence(board, tables, ctx, tt, ply + 1, -beta, -alpha, nodes, time);
         undo_move_basic(board, undo);
 
+        if score > best_score {
+            best_score = score;
+            best_move = Some(mv);
+        }
+
         if score >= beta {
+            // Store TT (LowerBound)
+            let tt_score = score_to_tt(score, ply as i32);
+            tt.save(
+                hash,
+                Some(mv),
+                tt_score,
+                0,
+                NodeType::LowerBound as u8,
+                ply as i32,
+            );
             return beta;
         }
         if score > alpha {
             alpha = score;
         }
     }
+
+    // Store TT at end of QS
+    let node_type = if best_score > original_alpha {
+        NodeType::Exact
+    } else {
+        NodeType::UpperBound
+    };
+    let tt_score = score_to_tt(best_score, ply as i32);
+    tt.save(hash, best_move, tt_score, 0, node_type as u8, ply as i32);
+
     alpha
 }
 
@@ -355,6 +398,9 @@ pub fn alpha_beta(
         {
             let lmp_threshold = LMP_BASE_MOVES + LMP_MOVE_MULTIPLIER * depth;
             if move_count > lmp_threshold as usize {
+                // break is correct: MovePicker stages are HashMove → GoodCaptures →
+                // Killers → Quiets → BadCaptures. Only bad captures remain after
+                // quiets, and those are SEE-negative (lose material), safe to skip.
                 break;
             }
         }
