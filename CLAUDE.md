@@ -4,7 +4,7 @@
 - **Backend**: Rust (Edition 2024), built with `cargo build --release`
 - **Frontend**: Next.js 15 + Tailwind CSS (in `frontend/`)
 - **WASM**: Compiled via `wasm-pack build --target web --no-default-features --features psqt`
-- **Tests**: `cargo test --release` (300+ tests, must all pass)
+- **Tests**: `cargo test --release --features load_magic,deterministic_zobrist` (300+ tests, must all pass)
 - **Lint**: `cargo clippy`
 - **Format**: `cargo fmt`
 
@@ -29,5 +29,5 @@
 ## Common Tasks
 - Build native: `cd backend && cargo build --release`
 - Build WASM: `cd backend && wasm-pack build --target web --no-default-features --features psqt`
-- Run tests: `cd backend && cargo test --release`
+- Run tests: `cd backend && cargo test --release --features load_magic,deterministic_zobrist`
 - Run engine: `echo "uci\nisready\nposition startpos\ngo depth 6\nquit" | ./backend/target/release/vantage`

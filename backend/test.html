@@ -1,0 +1,49 @@
+<!-- test.html - open in browser to verify WASM works -->
+<!DOCTYPE html>
+<html>
+<head><title>Vantage WASM Test</title></head>
+<body>
+<h1>Vantage WASM PoC</h1>
+<pre id="output">Loading engine...</pre>
+<script type="module">
+    import init, { VantageEngine } from './pkg/vantage.js';
+
+    async function run() {
+        const out = document.getElementById('output');
+        const log = (msg) => { out.textContent += '\n' + msg; };
+
+        await init();
+        log('WASM module loaded');
+
+        const t0 = performance.now();
+        const engine = new VantageEngine();
+        log(`Engine initialized in ${(performance.now() - t0).toFixed(0)}ms`);
+
+        log(`Starting FEN: ${engine.get_fen()}`);
+        log(`Side to move: ${engine.side_to_move()}`);
+        log(`Legal moves: ${engine.get_legal_moves()}`);
+
+        const t1 = performance.now();
+        const result = engine.go_depth(6);
+        log(`Depth 6 search: ${result} (${(performance.now() - t1).toFixed(0)}ms)`);
+
+        engine.apply_move('e2e4');
+        log(`After e2e4: ${engine.get_fen()}`);
+        log(`Side to move: ${engine.side_to_move()}`);
+
+        const result2 = engine.go_depth(6);
+        log(`Black's response (depth 6): ${result2}`);
+
+        engine.set_position_fen('r1bqkbnr/pppppppp/2n5/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3');
+        log(`Custom FEN set: ${engine.get_fen()}`);
+        log(`Legal moves: ${engine.get_legal_moves()}`);
+
+        log('\nAll tests passed!');
+    }
+
+    run().catch(e => {
+        document.getElementById('output').textContent += '\nERROR: ' + e;
+    });
+</script>
+</body>
+</html>

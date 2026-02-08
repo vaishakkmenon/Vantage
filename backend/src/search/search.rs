@@ -3,12 +3,19 @@ use crate::moves::execute::{make_move_basic, make_null_move, undo_move_basic, un
 use crate::moves::magic::MagicTables;
 use crate::moves::square_control::in_check;
 use crate::moves::types::Move;
+use crate::output::engine_println;
 use crate::search::context::SearchContext;
 use crate::search::eval::static_eval;
 use crate::search::picker::MovePicker;
 use crate::search::see::SeeExt;
 use crate::search::tt::{NodeType, TranspositionTable};
-use std::time::{Duration, Instant};
+use std::time::Duration;
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Instant;
+
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 
 const INF: i32 = 32000;
 const MATE_SCORE: i32 = 31000;
@@ -696,7 +703,7 @@ pub fn search(
                 format!("cp {}", last_completed_best_score)
             };
 
-            println!(
+            engine_println!(
                 "info depth {} score {} nodes {} time {} pv {}",
                 depth,
                 score_str,

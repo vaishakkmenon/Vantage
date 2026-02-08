@@ -13,21 +13,25 @@ pub struct PolyglotBook {
 }
 
 impl PolyglotBook {
+    /// Load from a byte slice (used by WASM via include_bytes!)
+    pub fn from_bytes(data: &[u8]) -> Self {
+        let count = data.len() / 16;
+        let mut entries = Vec::with_capacity(count);
+
+        for i in 0..count {
+            let start = i * 16;
+            entries.push(PolyglotEntry::from_bytes(&data[start..start + 16]));
+        }
+
+        Self { entries }
+    }
+
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let f = File::open(path)?;
         let mut reader = BufReader::new(f);
         let mut buffer = Vec::new();
         reader.read_to_end(&mut buffer)?;
-
-        let count = buffer.len() / 16;
-        let mut entries = Vec::with_capacity(count);
-
-        for i in 0..count {
-            let start = i * 16;
-            entries.push(PolyglotEntry::from_bytes(&buffer[start..start + 16]));
-        }
-
-        Ok(Self { entries })
+        Ok(Self::from_bytes(&buffer))
     }
 
     pub fn probe(&self, board: &Board) -> Option<Move> {
