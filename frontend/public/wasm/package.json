@@ -1,0 +1,15 @@
+{
+  "name": "vantage",
+  "type": "module",
+  "version": "1.4.0",
+  "files": [
+    "vantage_bg.wasm",
+    "vantage.js",
+    "vantage.d.ts"
+  ],
+  "main": "vantage.js",
+  "types": "vantage.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

@@ -10,6 +10,9 @@ git-config-docker
 .docker/
 .claude/
 
+# Build Artifacts
+vantage_bg.wasm
+
 # Ignore chess engine logs
 *.001
 *.pgn

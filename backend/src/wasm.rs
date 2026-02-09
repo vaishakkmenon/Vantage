@@ -8,6 +8,7 @@ use crate::moves::magic::loader::load_magic_tables;
 use crate::moves::types::Move;
 use crate::search::search::search;
 use crate::search::tt::TranspositionTable;
+use crate::status::{GameStatus, position_status};
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -126,6 +127,74 @@ impl VantageEngine {
             Color::Black => "black".to_string(),
         }
     }
+
+    /// Check if a specific UCI move is legal. Returns true/false.
+    pub fn is_move_legal(&mut self, uci_move: &str) -> bool {
+        self.parse_uci_move(uci_move).is_some()
+    }
+
+    /// Make a move and return success status.
+    /// Returns JSON: {"valid": true/false, "fen": "...", "status": "active|checkmate|stalemate|draw"}
+    pub fn make_move(&mut self, uci_move: &str) -> String {
+        if let Some(mv) = self.parse_uci_move(uci_move) {
+            make_move_basic(&mut self.board, mv);
+
+            let status = self.get_game_status_internal();
+            let fen = self.board.to_fen();
+
+            format!(r#"{{"valid":true,"fen":"{}","status":"{}"}}"#, fen, status)
+        } else {
+            r#"{"valid":false,"fen":"","status":""}"#.to_string()
+        }
+    }
+
+    /// Get current game status: "active", "checkmate", "stalemate", "draw_*"
+    pub fn get_game_status(&mut self) -> String {
+        self.get_game_status_internal()
+    }
+
+    /// Get legal moves for a specific square (e.g., "e2")
+    /// Returns JSON array: ["e2e4", "e2e3"] or empty array if no piece/illegal square
+    pub fn get_legal_moves_for_square(&mut self, square: &str) -> String {
+        if square.len() != 2 {
+            return "[]".to_string();
+        }
+
+        let chars: Vec<char> = square.chars().collect();
+        let file = (chars[0] as u8).wrapping_sub(b'a');
+        let rank = (chars[1] as u8).wrapping_sub(b'1');
+
+        if file > 7 || rank > 7 {
+            return "[]".to_string();
+        }
+
+        let from_square = (rank * 8 + file) as usize;
+
+        let mut moves: Vec<Move> = Vec::with_capacity(256);
+        let mut scratch: Vec<Move> = Vec::with_capacity(256);
+        let mut board_copy = self.board.clone();
+        generate_legal(
+            &mut board_copy,
+            &self.magic_tables,
+            &mut moves,
+            &mut scratch,
+        );
+
+        let square_moves: Vec<String> = moves
+            .iter()
+            .filter(|m| m.from.index() as usize == from_square)
+            .map(|m| m.to_uci())
+            .collect();
+
+        format!(
+            "[{}]",
+            square_moves
+                .iter()
+                .map(|m| format!("\"{}\"", m))
+                .collect::<Vec<_>>()
+                .join(",")
+        )
+    }
 }
 
 // Private helper methods (not exposed to JS)
@@ -209,5 +278,20 @@ impl VantageEngine {
             }
         }
         None
+    }
+
+    fn get_game_status_internal(&mut self) -> String {
+        let status = position_status(&mut self.board, &self.magic_tables);
+
+        match status {
+            GameStatus::Checkmate => "checkmate".to_string(),
+            GameStatus::Stalemate => "stalemate".to_string(),
+            GameStatus::DrawFivefold => "draw_fivefold".to_string(),
+            GameStatus::DrawSeventyFiveMove => "draw_75move".to_string(),
+            GameStatus::DrawDeadPosition => "draw_dead".to_string(),
+            GameStatus::DrawThreefold => "draw_threefold".to_string(),
+            GameStatus::DrawFiftyMove => "draw_50move".to_string(),
+            GameStatus::InPlay => "active".to_string(),
+        }
     }
 }
