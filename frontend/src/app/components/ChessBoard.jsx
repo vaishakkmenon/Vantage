@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useEngine } from '../hooks/useEngine';
+import EvalBar from './EvalBar';
 
+// ... [GameOverModal code remains exactly the same] ...
 function GameOverModal({ status, onNewGame }) {
     const isCheckmate = status === 'checkmate';
 
@@ -41,7 +43,6 @@ function GameOverModal({ status, onNewGame }) {
                 boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.3)',
                 animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             }}>
-                {/* Chess icon */}
                 <div style={{
                     fontSize: '48px',
                     marginBottom: '20px',
@@ -49,8 +50,6 @@ function GameOverModal({ status, onNewGame }) {
                 }}>
                     {isCheckmate ? '♚' : '½'}
                 </div>
-
-                {/* Title */}
                 <h2 style={{
                     fontSize: '28px',
                     fontWeight: 700,
@@ -60,8 +59,6 @@ function GameOverModal({ status, onNewGame }) {
                 }}>
                     {messages[status] || 'Game Over'}
                 </h2>
-
-                {/* Subtitle */}
                 <p style={{
                     fontSize: '15px',
                     color: 'rgba(255, 255, 255, 0.5)',
@@ -70,15 +67,11 @@ function GameOverModal({ status, onNewGame }) {
                 }}>
                     {subtitle}
                 </p>
-
-                {/* Divider */}
                 <div style={{
                     height: '1px',
                     background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
                     marginBottom: '28px',
                 }} />
-
-                {/* New Game button */}
                 <button
                     onClick={onNewGame}
                     style={{
@@ -107,7 +100,6 @@ function GameOverModal({ status, onNewGame }) {
                     New Game
                 </button>
             </div>
-
             <style>{`
                 @keyframes fadeIn {
                     from { opacity: 0; }
@@ -129,6 +121,10 @@ export default function ChessBoard() {
     const [isThinking, setIsThinking] = useState(false);
     const [lastMove, setLastMove] = useState(null);
     const { engine, isLoading, error } = useEngine();
+
+    // Task 1b.1: Track Move History + Eval in State
+    const [moves, setMoves] = useState([]);
+    const [currentEval, setCurrentEval] = useState(0);
 
     if (isLoading) {
         return <div style={{ padding: '20px', textAlign: 'center' }}>Loading chess engine...</div>;
@@ -152,18 +148,30 @@ export default function ChessBoard() {
         setPosition(game.fen());
 
         const uci = sourceSquare + targetSquare;
-        handleMove(uci);
+        handleMove(uci, move.san);
         return true;
     }
 
-    async function handleMove(uci) {
+    async function handleMove(uci, playerSan) {
         const result = await engine.makeMove(uci);
+
+        setMoves(prev => [...prev, {
+            san: playerSan,
+            uci: uci,
+            fen: result.fen,
+            score: null,
+            from_book: false,
+        }]);
 
         if (result.status !== 'active') {
             setLastMove({ from: uci.substring(0, 2), to: uci.substring(2, 4) });
             setGameOver(result.status);
             return;
         }
+
+        // Before searching, we capture whose turn it is (the Engine's turn)
+        // If it's Black's turn, the engine returns scores relative to Black.
+        const engineColor = game.turn();
 
         setIsThinking(true);
         const searchResult = await engine.search({ depth: 10 });
@@ -174,6 +182,20 @@ export default function ChessBoard() {
 
         setPosition(engineResult.fen);
         setLastMove({ from: searchResult.bestmove.substring(0, 2), to: searchResult.bestmove.substring(2, 4) });
+
+        // Normalize Score:
+        // If the engine was playing Black, invert the score so it's always "White Perspective"
+        const normalizedScore = engineColor === 'b' ? -searchResult.score : searchResult.score;
+
+        setMoves(prev => [...prev, {
+            san: game.history().slice(-1)[0],
+            uci: searchResult.bestmove,
+            fen: engineResult.fen,
+            score: normalizedScore, // Store normalized score
+            from_book: searchResult.from_book,
+        }]);
+
+        setCurrentEval(normalizedScore); // Update state with normalized score
 
         if (engineResult.status !== 'active') {
             setGameOver(engineResult.status);
@@ -186,6 +208,8 @@ export default function ChessBoard() {
         setPosition('start');
         setGameOver(null);
         setLastMove(null);
+        setMoves([]);
+        setCurrentEval(0);
     }
 
     const highlightStyles = {};
@@ -211,18 +235,42 @@ export default function ChessBoard() {
             }}>
                 Vantage Chess
             </h1>
-            <Chessboard
-                position={position}
-                onPieceDrop={onPieceDrop}
-                customSquareStyles={highlightStyles}
-                animationDuration={150}
-                customDarkSquareStyle={{ backgroundColor: '#4a4a4a' }}
-                customLightSquareStyle={{ backgroundColor: '#6b6b6b' }}
-                customBoardStyle={{
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-                }}
-            />
+
+            <div style={{
+                display: 'flex',
+                gap: '16px',
+                alignItems: 'stretch',
+                justifyContent: 'center'
+            }}>
+
+                <EvalBar
+                    score={currentEval}
+                    isThinking={isThinking}
+                    isMate={false}
+                />
+
+                <div style={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                }}>
+                    <div style={{ width: '100%' }}>
+                        <Chessboard
+                            position={position}
+                            onPieceDrop={onPieceDrop}
+                            customSquareStyles={highlightStyles}
+                            animationDuration={150}
+                            customDarkSquareStyle={{ backgroundColor: '#4a4a4a' }}
+                            customLightSquareStyle={{ backgroundColor: '#6b6b6b' }}
+                            customBoardStyle={{
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+
             {gameOver && (
                 <GameOverModal status={gameOver} onNewGame={handleNewGame} />
             )}
