@@ -5,114 +5,8 @@ import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useEngine } from '../hooks/useEngine';
 import EvalBar from './EvalBar';
-
-// ... [GameOverModal code remains exactly the same] ...
-function GameOverModal({ status, onNewGame }) {
-    const isCheckmate = status === 'checkmate';
-
-    const messages = {
-        checkmate: 'Checkmate',
-        stalemate: 'Stalemate',
-        draw_threefold: 'Threefold Repetition',
-        draw_50move: '50 Move Rule',
-        draw_fivefold: 'Fivefold Repetition',
-        draw_75move: '75 Move Rule',
-        draw_dead: 'Insufficient Material',
-    };
-
-    const subtitle = isCheckmate ? 'The engine wins.' : 'The game is a draw.';
-
-    return (
-        <div style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 1000,
-            animation: 'fadeIn 0.3s ease-out',
-        }}>
-            <div style={{
-                background: 'linear-gradient(145deg, #1a1a1a 0%, #111111 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                padding: '48px 40px',
-                borderRadius: '16px',
-                textAlign: 'center',
-                minWidth: '320px',
-                maxWidth: '400px',
-                boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.3)',
-                animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-            }}>
-                <div style={{
-                    fontSize: '48px',
-                    marginBottom: '20px',
-                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
-                }}>
-                    {isCheckmate ? '♚' : '½'}
-                </div>
-                <h2 style={{
-                    fontSize: '28px',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    marginBottom: '8px',
-                    letterSpacing: '-0.5px',
-                }}>
-                    {messages[status] || 'Game Over'}
-                </h2>
-                <p style={{
-                    fontSize: '15px',
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    marginBottom: '32px',
-                    fontWeight: 400,
-                }}>
-                    {subtitle}
-                </p>
-                <div style={{
-                    height: '1px',
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
-                    marginBottom: '28px',
-                }} />
-                <button
-                    onClick={onNewGame}
-                    style={{
-                        padding: '12px 36px',
-                        fontSize: '15px',
-                        fontWeight: 600,
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        color: '#0a0a0a',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        letterSpacing: '0.3px',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.target.style.background = '#ffffff';
-                        e.target.style.transform = 'translateY(-1px)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = 'none';
-                    }}
-                >
-                    New Game
-                </button>
-            </div>
-            <style>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { opacity: 0; transform: translateY(20px) scale(0.96); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
-                }
-            `}</style>
-        </div>
-    );
-}
+import MoveHistory from './MoveHistory';
+import GameOverModal from './GameOverModal'; // Import the extracted component
 
 export default function ChessBoard() {
     const [game] = useState(new Chess());
@@ -125,6 +19,8 @@ export default function ChessBoard() {
     // Task 1b.1: Track Move History + Eval in State
     const [moves, setMoves] = useState([]);
     const [currentEval, setCurrentEval] = useState(0);
+
+    const currentMoveIndex = moves.length - 1;
 
     if (isLoading) {
         return <div style={{ padding: '20px', textAlign: 'center' }}>Loading chess engine...</div>;
@@ -169,8 +65,6 @@ export default function ChessBoard() {
             return;
         }
 
-        // Before searching, we capture whose turn it is (the Engine's turn)
-        // If it's Black's turn, the engine returns scores relative to Black.
         const engineColor = game.turn();
 
         setIsThinking(true);
@@ -183,19 +77,17 @@ export default function ChessBoard() {
         setPosition(engineResult.fen);
         setLastMove({ from: searchResult.bestmove.substring(0, 2), to: searchResult.bestmove.substring(2, 4) });
 
-        // Normalize Score:
-        // If the engine was playing Black, invert the score so it's always "White Perspective"
         const normalizedScore = engineColor === 'b' ? -searchResult.score : searchResult.score;
 
         setMoves(prev => [...prev, {
             san: game.history().slice(-1)[0],
             uci: searchResult.bestmove,
             fen: engineResult.fen,
-            score: normalizedScore, // Store normalized score
+            score: normalizedScore,
             from_book: searchResult.from_book,
         }]);
 
-        setCurrentEval(normalizedScore); // Update state with normalized score
+        setCurrentEval(normalizedScore);
 
         if (engineResult.status !== 'active') {
             setGameOver(engineResult.status);
@@ -221,7 +113,7 @@ export default function ChessBoard() {
 
     return (
         <div style={{
-            maxWidth: '600px',
+            maxWidth: '900px',
             margin: '0 auto',
             padding: '40px 20px',
             color: 'white',
@@ -232,27 +124,32 @@ export default function ChessBoard() {
                 fontWeight: 700,
                 marginBottom: '24px',
                 color: 'white',
+                textAlign: 'center',
             }}>
                 Vantage Chess
             </h1>
 
             <div style={{
                 display: 'flex',
-                gap: '16px',
+                gap: '24px',
                 alignItems: 'stretch',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                height: '560px',
             }}>
 
+                {/* Left: Eval Bar */}
                 <EvalBar
                     score={currentEval}
                     isThinking={isThinking}
                     isMate={false}
                 />
 
+                {/* Center: Board */}
                 <div style={{
                     flexGrow: 1,
                     display: 'flex',
                     alignItems: 'center',
+                    maxWidth: '560px',
                 }}>
                     <div style={{ width: '100%' }}>
                         <Chessboard
@@ -266,6 +163,34 @@ export default function ChessBoard() {
                                 borderRadius: '8px',
                                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
                             }}
+                        />
+                    </div>
+                </div>
+
+                {/* Right: Move History Panel */}
+                <div style={{
+                    width: '240px',
+                    background: '#1e1e1e',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    border: '1px solid #333',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}>
+                    <div style={{
+                        padding: '12px 16px',
+                        borderBottom: '1px solid #333',
+                        background: '#252525',
+                        borderTopLeftRadius: '8px',
+                        borderTopRightRadius: '8px',
+                    }}>
+                        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#ddd' }}>Move History</h3>
+                    </div>
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <MoveHistory
+                            moves={moves}
+                            currentMoveIndex={currentMoveIndex}
+                            onMoveClick={(index) => console.log('Clicked move:', index)}
                         />
                     </div>
                 </div>
