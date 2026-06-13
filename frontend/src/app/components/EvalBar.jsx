@@ -3,13 +3,22 @@
 export default function EvalBar({ score = 0, isThinking = false, isMate = false }) {
     const safeScore = Number(score) || 0;
 
-    // 1. Calculate Percentages
+    // Auto-detect mate if score is huge (standard engines use +/- 30000 range for mate)
+    // Threshold: 10000 cp (100 pawns)
+    const isMateScore = Math.abs(safeScore) > 10000;
+
     let percent;
     let displayText;
 
-    if (isMate) {
+    if (isMate || isMateScore) {
         percent = safeScore > 0 ? 100 : 0;
-        displayText = `M${Math.abs(safeScore)}`;
+
+        const MATE_SCORE_CONSTANT = 31000;
+        const pliesToMate = MATE_SCORE_CONSTANT - Math.abs(safeScore);
+        const movesToMate = Math.ceil(pliesToMate / 2);
+
+        const dist = (movesToMate > 0 && movesToMate < 100) ? movesToMate : "";
+        displayText = `M${dist}`;
     } else {
         const clamped = Math.max(-1000, Math.min(1000, safeScore));
         percent = 50 + (clamped / 1000) * 50;
@@ -29,10 +38,7 @@ export default function EvalBar({ score = 0, isThinking = false, isMate = false 
     return (
         <div style={{
             width: '32px',
-            // REMOVED minHeight and height. 
-            // The parent flex container in ChessBoard.jsx (alignItems: stretch) 
-            // will force this to match the board's height exactly.
-            borderRadius: '8px', // Matched to your Board's border radius
+            borderRadius: '8px',
             overflow: 'hidden',
             boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
             display: 'flex',

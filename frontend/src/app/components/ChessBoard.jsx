@@ -6,17 +6,23 @@ import { Chessboard } from 'react-chessboard';
 import { useEngine } from '../hooks/useEngine';
 import EvalBar from './EvalBar';
 import MoveHistory from './MoveHistory';
-import GameOverModal from './GameOverModal'; // Import the extracted component
+import GameOverModal from './GameOverModal';
+import GameControls from './GameControls';
 
 export default function ChessBoard() {
     const [game] = useState(new Chess());
     const [position, setPosition] = useState('start');
+
+    // Game Status State
     const [gameOver, setGameOver] = useState(null);
+    const [showModal, setShowModal] = useState(false); // NEW: Controls modal visibility
+
     const [isThinking, setIsThinking] = useState(false);
     const [lastMove, setLastMove] = useState(null);
+    const [boardOrientation, setBoardOrientation] = useState('white');
+
     const { engine, isLoading, error } = useEngine();
 
-    // Task 1b.1: Track Move History + Eval in State
     const [moves, setMoves] = useState([]);
     const [currentEval, setCurrentEval] = useState(0);
 
@@ -29,6 +35,25 @@ export default function ChessBoard() {
     if (error) {
         return <div style={{ padding: '20px', color: 'red' }}>Error: {error}</div>;
     }
+
+    // --- Control Handlers ---
+
+    const handleFlipBoard = () => {
+        setBoardOrientation(prev => prev === 'white' ? 'black' : 'white');
+    };
+
+    const handleResign = () => {
+        if (!gameOver) {
+            setGameOver('resign');
+            setShowModal(true); // Show modal on resign
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false); // Only hide modal, game remains over
+    };
+
+    // --- Game Logic ---
 
     function onPieceDrop(sourceSquare, targetSquare, piece) {
         if (gameOver || isThinking) return false;
@@ -62,6 +87,7 @@ export default function ChessBoard() {
         if (result.status !== 'active') {
             setLastMove({ from: uci.substring(0, 2), to: uci.substring(2, 4) });
             setGameOver(result.status);
+            setShowModal(true); // Show modal on engine flag fall/mate
             return;
         }
 
@@ -91,6 +117,7 @@ export default function ChessBoard() {
 
         if (engineResult.status !== 'active') {
             setGameOver(engineResult.status);
+            setShowModal(true); // Show modal on engine win/draw
         }
     }
 
@@ -99,9 +126,11 @@ export default function ChessBoard() {
         game.reset();
         setPosition('start');
         setGameOver(null);
+        setShowModal(false); // Reset modal state
         setLastMove(null);
         setMoves([]);
         setCurrentEval(0);
+        setBoardOrientation('white');
     }
 
     const highlightStyles = {};
@@ -124,7 +153,6 @@ export default function ChessBoard() {
                 fontWeight: 700,
                 marginBottom: '24px',
                 color: 'white',
-                textAlign: 'center',
             }}>
                 Vantage Chess
             </h1>
@@ -144,17 +172,19 @@ export default function ChessBoard() {
                     isMate={false}
                 />
 
-                {/* Center: Board */}
+                {/* Center: Board + Controls */}
                 <div style={{
                     flexGrow: 1,
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     maxWidth: '560px',
                 }}>
-                    <div style={{ width: '100%' }}>
+                    <div style={{ width: '100%', flex: 1 }}>
                         <Chessboard
                             position={position}
                             onPieceDrop={onPieceDrop}
+                            boardOrientation={boardOrientation}
                             customSquareStyles={highlightStyles}
                             animationDuration={150}
                             customDarkSquareStyle={{ backgroundColor: '#4a4a4a' }}
@@ -163,6 +193,15 @@ export default function ChessBoard() {
                                 borderRadius: '8px',
                                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
                             }}
+                        />
+                    </div>
+
+                    {/* Game Controls */}
+                    <div style={{ width: '100%' }}>
+                        <GameControls
+                            onNewGame={handleNewGame}
+                            onFlipBoard={handleFlipBoard}
+                            onResign={handleResign}
                         />
                     </div>
                 </div>
@@ -196,8 +235,12 @@ export default function ChessBoard() {
                 </div>
             </div>
 
-            {gameOver && (
-                <GameOverModal status={gameOver} onNewGame={handleNewGame} />
+            {gameOver && showModal && (
+                <GameOverModal
+                    status={gameOver}
+                    onNewGame={handleNewGame}
+                    onClose={handleCloseModal}
+                />
             )}
         </div>
     );

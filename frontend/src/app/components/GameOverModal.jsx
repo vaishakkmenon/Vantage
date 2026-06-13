@@ -1,7 +1,8 @@
 'use client';
 
-export default function GameOverModal({ status, onNewGame }) {
+export default function GameOverModal({ status, onNewGame, onClose }) {
     const isCheckmate = status === 'checkmate';
+    const isResignation = status === 'resign';
 
     const messages = {
         checkmate: 'Checkmate',
@@ -11,9 +12,12 @@ export default function GameOverModal({ status, onNewGame }) {
         draw_fivefold: 'Fivefold Repetition',
         draw_75move: '75 Move Rule',
         draw_dead: 'Insufficient Material',
+        resign: 'Resignation',
     };
 
-    const subtitle = isCheckmate ? 'The engine wins.' : 'The game is a draw.';
+    let subtitle = 'The game is a draw.';
+    if (isCheckmate) subtitle = 'The engine wins.';
+    if (isResignation) subtitle = 'You resigned. The engine wins.';
 
     return (
         <div style={{
@@ -36,16 +40,13 @@ export default function GameOverModal({ status, onNewGame }) {
                 boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 0, 0, 0.3)',
                 animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             }}>
-                {/* Icon */}
                 <div style={{
                     fontSize: '48px',
                     marginBottom: '20px',
                     filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
                 }}>
-                    {isCheckmate ? '♚' : '½'}
+                    {(isCheckmate || isResignation) ? '♚' : '½'}
                 </div>
-
-                {/* Title */}
                 <h2 style={{
                     fontSize: '28px',
                     fontWeight: 700,
@@ -55,8 +56,6 @@ export default function GameOverModal({ status, onNewGame }) {
                 }}>
                     {messages[status] || 'Game Over'}
                 </h2>
-
-                {/* Subtitle */}
                 <p style={{
                     fontSize: '15px',
                     color: 'rgba(255, 255, 255, 0.5)',
@@ -65,40 +64,66 @@ export default function GameOverModal({ status, onNewGame }) {
                 }}>
                     {subtitle}
                 </p>
-
                 <div style={{
                     height: '1px',
                     background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
                     marginBottom: '28px',
                 }} />
 
-                <button
-                    onClick={onNewGame}
-                    style={{
-                        padding: '12px 36px',
-                        fontSize: '15px',
-                        fontWeight: 600,
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        color: '#0a0a0a',
-                        border: 'none',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        letterSpacing: '0.3px',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.target.style.background = '#ffffff';
-                        e.target.style.transform = 'translateY(-1px)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = 'none';
-                    }}
-                >
-                    New Game
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button
+                        onClick={onNewGame}
+                        style={{
+                            padding: '12px 36px',
+                            fontSize: '15px',
+                            fontWeight: 600,
+                            background: 'rgba(255, 255, 255, 0.9)',
+                            color: '#0a0a0a',
+                            border: 'none',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            letterSpacing: '0.3px',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.background = '#ffffff';
+                            e.target.style.transform = 'translateY(-1px)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = 'none';
+                        }}
+                    >
+                        New Game
+                    </button>
+
+                    <button
+                        onClick={onClose}
+                        style={{
+                            padding: '12px 36px',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            background: 'transparent',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                            e.target.style.color = '#fff';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.background = 'transparent';
+                            e.target.style.color = 'rgba(255, 255, 255, 0.6)';
+                        }}
+                    >
+                        View Board
+                    </button>
+                </div>
             </div>
             <style jsx>{`
                 @keyframes fadeIn {
