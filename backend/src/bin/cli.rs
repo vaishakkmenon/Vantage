@@ -8,7 +8,7 @@ use vantage::moves::execute::{generate_legal, make_move_basic};
 use vantage::moves::magic::MagicTables;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::Move;
-use vantage::search::search::search;
+use vantage::search::search::{SearchLimits, search};
 use vantage::search::tt::TranspositionTable;
 
 fn main() {
@@ -305,9 +305,14 @@ fn handle_go(
     if let Some(limit) = time_limit {
         println!("info string Target time: {}ms", limit.as_millis());
     }
-    let (_score, best_move) = search(board, tables, tt, depth, time_limit);
+    let limits = SearchLimits {
+        max_depth: depth,
+        node_limit: None,
+        time_limit,
+    };
+    let result = search(board, tables, tt, limits);
 
-    if let Some(m) = best_move {
+    if let Some(m) = result.best_move {
         println!("bestmove {}", m.to_uci());
     } else {
         println!("bestmove 0000");
@@ -364,9 +369,14 @@ fn run_epd_tests(path: &str, tables: &MagicTables) {
             let depth = 64;
             let mut tt = TranspositionTable::new(512);
 
-            let (_score, best_move) = search(&mut board, tables, &mut tt, depth, time_limit);
+            let limits = SearchLimits {
+                max_depth: depth,
+                node_limit: None,
+                time_limit,
+            };
+            let result = search(&mut board, tables, &mut tt, limits);
 
-            let result_str = match best_move {
+            let result_str = match result.best_move {
                 Some(m) => m.to_uci(),
                 None => "none".to_string(),
             };

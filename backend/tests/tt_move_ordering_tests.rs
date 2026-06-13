@@ -6,7 +6,7 @@ use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::moves::types::Move;
 use vantage::search::context::SearchContext;
-use vantage::search::search::{TimeManager, alpha_beta, search};
+use vantage::search::search::{SearchLimits, SearchResult, TimeManager, alpha_beta, search};
 use vantage::search::tt::TranspositionTable;
 
 const INF: i32 = 32000;
@@ -70,12 +70,17 @@ fn test_iterative_deepening_uses_tt_moves() {
     // because TT moves from depth N-1 help search depth N
 
     // Note: 'search' implements iterative deepening internally
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        5,
-        None,
+        SearchLimits {
+            max_depth: 5,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     println!("ID depth 5: score={}, move={:?}", score, best_move);

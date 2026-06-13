@@ -69,6 +69,22 @@ fn score_from_tt(score: i32, ply: i32) -> i32 {
 }
 // -----------------------------------
 
+#[derive(Clone, Copy, Debug)]
+pub struct SearchLimits {
+    pub max_depth: i32,
+    pub node_limit: Option<u64>,
+    pub time_limit: Option<Duration>,
+}
+
+#[derive(Clone, Debug)]
+pub struct SearchResult {
+    pub score: i32,
+    pub best_move: Option<Move>,
+    pub pv: Vec<Move>,
+    pub depth: i32,
+    pub nodes: u64,
+}
+
 pub struct TimeManager {
     pub start_time: Instant,
     pub allotted: Option<Duration>,
@@ -594,17 +610,17 @@ pub fn search(
     board: &mut Board,
     tables: &MagicTables,
     tt: &mut TranspositionTable,
-    max_depth: i32,
-    time_limit: Option<Duration>,
-) -> (i32, Option<Move>) {
+    limits: SearchLimits,
+) -> SearchResult {
+    let mut last_completed_depth = 0;
     let mut last_completed_best_move = None;
     let mut last_completed_best_score = 0;
     let mut nodes = 0;
     let mut ctx = SearchContext::new();
-    let mut time = TimeManager::new(time_limit);
+    let mut time = TimeManager::new(limits.time_limit);
     let mut last_iter_duration = Duration::from_millis(0);
 
-    for depth in 1..=max_depth {
+    for depth in 1..=limits.max_depth {
         let iter_start = Instant::now();
 
         // --- ITERATIVE DEEPENING SAFETY CHECK ---
@@ -687,6 +703,7 @@ pub fn search(
         }
 
         // Only update if the depth actually finished
+        last_completed_depth = depth;
         last_completed_best_score = score;
         last_completed_best_move = mv;
 
@@ -719,5 +736,11 @@ pub fn search(
         }
     }
 
-    (last_completed_best_score, last_completed_best_move)
+    SearchResult {
+        score: last_completed_best_score,
+        best_move: last_completed_best_move,
+        pv: Vec::new(),
+        depth: last_completed_depth,
+        nodes,
+    }
 }

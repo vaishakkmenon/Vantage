@@ -3,7 +3,7 @@ use std::time::Duration;
 /// Verify the engine finds forced mates and wins material
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
-use vantage::search::search::search;
+use vantage::search::search::{SearchLimits, SearchResult, search};
 use vantage::search::tt::TranspositionTable;
 
 #[test]
@@ -16,12 +16,15 @@ fn test_mate_in_1_scholars_mate() {
     let tables = load_magic_tables();
 
     // Search should recognize this is a very bad position for Black
-    let (score, _best_move) = search(
+    let SearchResult { score, .. } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        1,
-        Some(Duration::from_secs(5)),
+        SearchLimits {
+            max_depth: 1,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(5)),
+        },
     );
 
     // Black is in a lost position (should have very negative score from Black's perspective)
@@ -41,12 +44,15 @@ fn test_back_rank_mate() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (_score, best_move) = search(
+    let SearchResult { best_move, .. } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        3,
-        Some(Duration::from_secs(10)),
+        SearchLimits {
+            max_depth: 3,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(10)),
+        },
     );
 
     // Should find the back rank mate
@@ -64,12 +70,17 @@ fn test_capture_hanging_queen() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        2,
-        Some(Duration::from_secs(5)),
+        SearchLimits {
+            max_depth: 2,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(5)),
+        },
     );
 
     // Should recognize massive material advantage after capturing queen
@@ -96,12 +107,15 @@ fn test_avoid_hanging_piece() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (_score, best_move) = search(
+    let SearchResult { best_move, .. } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        3,
-        Some(Duration::from_secs(5)),
+        SearchLimits {
+            max_depth: 3,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(5)),
+        },
     );
 
     let mv = best_move.expect("Should find a move");
@@ -121,12 +135,15 @@ fn test_fork_opportunity() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, _best_move) = search(
+    let SearchResult { score, .. } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        Some(Duration::from_secs(10)),
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(5)),
+        },
     );
 
     // Should recognize this is a good position for black
@@ -143,12 +160,17 @@ fn test_starting_position_sanity() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        3,
-        Some(Duration::from_secs(5)),
+        SearchLimits {
+            max_depth: 3,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(5)),
+        },
     );
 
     // Should return some standard opening move
@@ -173,12 +195,15 @@ fn test_piece_up_advantage() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, _best_move) = search(
+    let SearchResult { score, .. } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        2,
-        Some(Duration::from_secs(5)),
+        SearchLimits {
+            max_depth: 2,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(5)),
+        },
     );
 
     // Should recognize queen advantage (~900 centipawns)
@@ -198,12 +223,15 @@ fn test_piece_down_disadvantage() {
     board.set_fen(fen).unwrap();
     let tables = load_magic_tables();
 
-    let (score, _best_move) = search(
+    let SearchResult { score, .. } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        2,
-        Some(Duration::from_secs(5)),
+        SearchLimits {
+            max_depth: 2,
+            node_limit: None,
+            time_limit: Some(Duration::from_secs(5)),
+        },
     );
 
     // Should recognize huge disadvantage

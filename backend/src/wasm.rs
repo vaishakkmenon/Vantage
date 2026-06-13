@@ -6,7 +6,7 @@ use crate::moves::execute::{generate_legal, make_move_basic};
 use crate::moves::magic::MagicTables;
 use crate::moves::magic::loader::load_magic_tables;
 use crate::moves::types::Move;
-use crate::search::search::search;
+use crate::search::search::{SearchLimits, SearchResult, search};
 use crate::search::tt::TranspositionTable;
 use crate::status::{GameStatus, position_status};
 use std::str::FromStr;
@@ -210,12 +210,17 @@ impl VantageEngine {
             }
         }
 
-        let (score, best_move) = search(
+        let SearchResult {
+            score, best_move, ..
+        } = search(
             &mut self.board,
             &self.magic_tables,
             &mut self.tt,
-            depth,
-            time_limit,
+            SearchLimits {
+                max_depth: depth,
+                node_limit: None,
+                time_limit,
+            },
         );
 
         let move_str = best_move

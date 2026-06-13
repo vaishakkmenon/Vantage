@@ -5,7 +5,7 @@ use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::search::context::SearchContext;
-use vantage::search::search::{TimeManager, alpha_beta, search}; // Added TimeManager
+use vantage::search::search::{SearchLimits, SearchResult, TimeManager, alpha_beta, search}; // Added TimeManager
 use vantage::search::tt::TranspositionTable;
 
 const INF: i32 = 32000;
@@ -20,12 +20,17 @@ fn test_id_returns_move() {
         Board::from_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        3,
-        None,
+        SearchLimits {
+            max_depth: 3,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(
@@ -52,12 +57,17 @@ fn test_id_matches_fixed_depth() {
     let mut ctx = SearchContext::new();
     let mut tt = TranspositionTable::new(512); // Match size used in search()
 
-    let (score_id, _move_id) = search(
+    let SearchResult {
+        score: score_id, ..
+    } = search(
         &mut board1,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        None,
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     let mut nodes = 0;
@@ -101,12 +111,17 @@ fn test_id_multiple_depths() {
 
     // Test depths 1 through 5
     for depth in 1..=5 {
-        let (score, best_move) = search(
+        let SearchResult {
+            score, best_move, ..
+        } = search(
             &mut board,
             &tables,
             &mut TranspositionTable::new(512),
-            depth,
-            None,
+            SearchLimits {
+                max_depth: depth,
+                node_limit: None,
+                time_limit: None,
+            },
         );
 
         assert!(best_move.is_some(), "Should find move at depth {}", depth);
@@ -131,12 +146,17 @@ fn test_id_finds_capture() {
         Board::from_str("rnb1kbnr/pppppppp/8/8/8/3q4/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        3,
-        None,
+        SearchLimits {
+            max_depth: 3,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should find a move");
@@ -159,12 +179,17 @@ fn test_id_finds_mate_in_1() {
     let mut board = Board::from_str("6k1/5ppp/8/8/8/8/5PPP/3Q2K1 w - - 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        2,
-        None,
+        SearchLimits {
+            max_depth: 2,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should find mate move");
@@ -202,8 +227,11 @@ fn test_id_performance() {
         &mut board1,
         &tables,
         &mut TranspositionTable::new(512),
-        5,
-        None,
+        SearchLimits {
+            max_depth: 5,
+            node_limit: None,
+            time_limit: None,
+        },
     );
     let time_id = start_id.elapsed();
 
@@ -251,12 +279,17 @@ fn test_id_limited_moves() {
     let mut board = Board::from_str("8/8/8/8/8/3k4/8/3K4 w - - 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        None,
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(
@@ -283,19 +316,33 @@ fn test_id_deterministic() {
     let mut board2 = board1.clone();
     let tables = load_magic_tables();
 
-    let (score1, move1) = search(
+    let SearchResult {
+        score: score1,
+        best_move: move1,
+        ..
+    } = search(
         &mut board1,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        None,
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: None,
+        },
     );
-    let (score2, move2) = search(
+    let SearchResult {
+        score: score2,
+        best_move: move2,
+        ..
+    } = search(
         &mut board2,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        None,
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert_eq!(score1, score2, "Should get same score on repeated searches");
@@ -312,12 +359,17 @@ fn test_id_depth_1() {
         Board::from_str("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        1,
-        None,
+        SearchLimits {
+            max_depth: 1,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should work at depth 1");
@@ -341,12 +393,17 @@ fn test_id_complex_position() {
     let tables = load_magic_tables();
 
     // Should complete without crashing
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        None,
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should handle complex positions");
@@ -368,19 +425,29 @@ fn test_id_score_stability() {
         Board::from_str("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (score_d2, _) = search(
+    let SearchResult {
+        score: score_d2, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        2,
-        None,
+        SearchLimits {
+            max_depth: 2,
+            node_limit: None,
+            time_limit: None,
+        },
     );
-    let (score_d4, _) = search(
+    let SearchResult {
+        score: score_d4, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        None,
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     println!("Score at depth 2: {}", score_d2);

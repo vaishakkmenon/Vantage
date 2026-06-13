@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
-use vantage::search::search::search;
+use vantage::search::search::{SearchLimits, SearchResult, search};
 use vantage::search::tt::TranspositionTable;
 use vantage::square::Square;
 
@@ -13,12 +13,19 @@ fn test_scholar_mate_position_analysis() {
             Board::from_str("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
                 .unwrap();
         let tables = load_magic_tables();
-        let (score, mv) = search(
+        let SearchResult {
+            score,
+            best_move: mv,
+            ..
+        } = search(
             &mut board,
             &tables,
             &mut TranspositionTable::new(512),
-            depth,
-            None,
+            SearchLimits {
+                max_depth: depth,
+                node_limit: None,
+                time_limit: None,
+            },
         );
 
         if let Some(m) = mv {
@@ -33,12 +40,17 @@ fn test_simple_capture_is_best() {
     let mut board = Board::from_str("6k1/8/8/2q5/3P4/8/8/6K1 w - - 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        4,
-        None,
+        SearchLimits {
+            max_depth: 4,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should find a best move");
@@ -57,12 +69,19 @@ fn test_lmr_finds_tactical_move() {
     let tables = load_magic_tables();
 
     // LMR should NOT prune mate
-    let (best_score, best_move) = search(
+    let SearchResult {
+        score: best_score,
+        best_move,
+        ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        6,
-        None,
+        SearchLimits {
+            max_depth: 6,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should find a best move");
@@ -82,12 +101,15 @@ fn test_lmr_performance_improvement() {
     let tables = load_magic_tables();
 
     let start = Instant::now();
-    let (_score, _mv) = search(
+    let _ = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        6,
-        None,
+        SearchLimits {
+            max_depth: 6,
+            node_limit: None,
+            time_limit: None,
+        },
     );
     let duration = start.elapsed();
 
@@ -104,12 +126,19 @@ fn test_lmr_research_accuracy() {
     let mut board = Board::from_str("8/8/8/4k3/8/3K4/4P3/8 w - - 0 1").unwrap();
     let tables = load_magic_tables();
 
-    let (best_score, best_move) = search(
+    let SearchResult {
+        score: best_score,
+        best_move,
+        ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        8,
-        None,
+        SearchLimits {
+            max_depth: 8,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should find a best move");

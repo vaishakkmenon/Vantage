@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use vantage::board::Board;
 use vantage::moves::magic::loader::load_magic_tables;
-use vantage::search::search::search;
+use vantage::search::search::{SearchLimits, SearchResult, search};
 use vantage::search::tt::TranspositionTable;
 
 #[test]
@@ -11,12 +11,17 @@ fn test_aspiration_finds_correct_move() {
     let tables = load_magic_tables();
 
     // Search depth 6 (triggers aspiration windows which start > depth 4)
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        6,
-        None,
+        SearchLimits {
+            max_depth: 6,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some(), "Should find a best move");
@@ -31,12 +36,17 @@ fn test_aspiration_handles_score_drop() {
             .unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        6,
-        None,
+        SearchLimits {
+            max_depth: 6,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some());
@@ -51,12 +61,17 @@ fn test_aspiration_handles_score_jump() {
             .unwrap();
     let tables = load_magic_tables();
 
-    let (score, best_move) = search(
+    let SearchResult {
+        score, best_move, ..
+    } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        6,
-        None,
+        SearchLimits {
+            max_depth: 6,
+            node_limit: None,
+            time_limit: None,
+        },
     );
 
     assert!(best_move.is_some());
@@ -72,12 +87,15 @@ fn test_aspiration_performance() {
     let tables = load_magic_tables();
 
     let start = Instant::now();
-    let (_score, best_move) = search(
+    let SearchResult { best_move, .. } = search(
         &mut board,
         &tables,
         &mut TranspositionTable::new(512),
-        7,
-        None,
+        SearchLimits {
+            max_depth: 7,
+            node_limit: None,
+            time_limit: None,
+        },
     );
     let duration = start.elapsed();
 
