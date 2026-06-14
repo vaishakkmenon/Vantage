@@ -88,6 +88,7 @@ pub struct SearchResult {
 pub struct TimeManager {
     pub start_time: Instant,
     pub allotted: Option<Duration>,
+    pub node_limit: Option<u64>,
     pub stop_signal: bool,
 }
 
@@ -96,12 +97,13 @@ impl TimeManager {
         Self {
             start_time: Instant::now(),
             allotted: limit,
+            node_limit: None,
             stop_signal: false,
         }
     }
 
     #[inline(always)]
-    pub fn check_time(&mut self) {
+    pub fn check_time(&mut self, nodes: u64) {
         if self.stop_signal {
             return;
         }
@@ -113,6 +115,10 @@ impl TimeManager {
             if elapsed >= limit {
                 self.stop_signal = true;
             }
+        }
+
+        if let Some(n) = self.node_limit && nodes >= n {
+            self.stop_signal = true;
         }
     }
 
@@ -181,7 +187,7 @@ pub fn quiescence(
     while let Some(mv) = picker.next(board, tables, &empty_history) {
         *nodes += 1;
         if *nodes & 63 == 0 {
-            time.check_time();
+            time.check_time(*nodes);
         }
         if time.stop_signal {
             return stand_pat;
@@ -264,7 +270,7 @@ pub fn alpha_beta(
 ) -> (i32, Option<Move>) {
     // Check every 1024 nodes instead of 2047 for tighter control
     if *nodes & 63 == 0 {
-        time.check_time();
+        time.check_time(*nodes);
     }
 
     if time.stop_signal {
@@ -638,6 +644,10 @@ pub fn search(
                 break;
             }
         }
+
+        time.node_limit = if depth == 1 { None } else { limits.node_limit };
+
+        if depth > 1 && let Some(n) = limits.node_limit && nodes >= n { break; }
         // -----------------------------------------
 
         for from in 0..64 {
