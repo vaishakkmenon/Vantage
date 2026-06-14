@@ -117,7 +117,9 @@ impl TimeManager {
             }
         }
 
-        if let Some(n) = self.node_limit && nodes >= n {
+        if let Some(n) = self.node_limit
+            && nodes >= n
+        {
             self.stop_signal = true;
         }
     }
@@ -647,7 +649,12 @@ pub fn search(
 
         time.node_limit = if depth == 1 { None } else { limits.node_limit };
 
-        if depth > 1 && let Some(n) = limits.node_limit && nodes >= n { break; }
+        if depth > 1
+            && let Some(n) = limits.node_limit
+            && nodes >= n
+        {
+            break;
+        }
         // -----------------------------------------
 
         for from in 0..64 {
