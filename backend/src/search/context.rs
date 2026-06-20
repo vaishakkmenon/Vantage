@@ -1,8 +1,12 @@
 use crate::moves::types::Move;
 
+pub const MAX_PLY: usize = 64;
+
 pub struct SearchContext {
     pub killer_moves: Vec<[Option<Move>; 2]>,
     pub history: [[i32; 64]; 64],
+    pub pv_table: [[Option<Move>; MAX_PLY]; MAX_PLY],
+    pub pv_length: [usize; MAX_PLY],
 }
 
 impl Default for SearchContext {
@@ -16,6 +20,8 @@ impl SearchContext {
         Self {
             killer_moves: vec![[None; 2]; 64],
             history: [[0; 64]; 64],
+            pv_table: [[None; MAX_PLY]; MAX_PLY],
+            pv_length: [0; MAX_PLY],
         }
     }
 
