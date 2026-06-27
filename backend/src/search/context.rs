@@ -10,13 +10,13 @@ pub const MAX_PLY: usize = 64;
 pub struct SearchContext {
     /// Array to store killer moves for each ply.
     pub killer_moves: Vec<[Option<Move>; 2]>,
-    
+
     /// History heuristic array to encourage moves that have been successful in the past.
     pub history: [[i32; 64]; 64],
-    
+
     /// Principal Variation (PV) table to store the best move sequence found so far.
     pub pv_table: [[Option<Move>; MAX_PLY]; MAX_PLY],
-    
+
     /// Array to store the length of the principal variation for each ply.
     pub pv_length: [usize; MAX_PLY],
 }
