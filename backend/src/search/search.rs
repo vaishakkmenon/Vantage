@@ -4,7 +4,7 @@ use crate::moves::magic::MagicTables;
 use crate::moves::square_control::in_check;
 use crate::moves::types::Move;
 use crate::output::engine_println;
-use crate::search::context::SearchContext;
+use crate::search::context::{MAX_PLY, SearchContext};
 use crate::search::eval::static_eval;
 use crate::search::picker::MovePicker;
 use crate::search::see::SeeExt;
@@ -278,7 +278,9 @@ pub fn alpha_beta(
     if time.stop_signal {
         return (0, None);
     }
+
     *nodes += 1;
+    ctx.pv_length[ply] = 0;
 
     // 2. Repetition & TT Probing (Standard)
     if ply > 0 && board.is_repetition() {
@@ -554,6 +556,14 @@ pub fn alpha_beta(
             if score > alpha {
                 alpha = score;
                 best_move = Some(mv);
+
+                if ply + 1 < MAX_PLY {
+                    ctx.pv_table[ply][0] = Some(mv);
+                    for i in 0..ctx.pv_length[ply + 1] {
+                        ctx.pv_table[ply][i + 1] = ctx.pv_table[ply + 1][i];
+                    }
+                    ctx.pv_length[ply] = ctx.pv_length[ply + 1] + 1;
+                }
             }
             if score >= beta {
                 // TT SAVE WITH MATE SCORE ADJUSTMENT (LowerBound/Beta Cutoff)
@@ -623,6 +633,7 @@ pub fn search(
     let mut last_completed_depth = 0;
     let mut last_completed_best_move = None;
     let mut last_completed_best_score = 0;
+    let mut last_completed_pv: Vec<Move> = Vec::new();
     let mut nodes = 0;
     let mut ctx = SearchContext::new();
     let mut time = TimeManager::new(limits.time_limit);
@@ -724,6 +735,11 @@ pub fn search(
         last_completed_best_score = score;
         last_completed_best_move = mv;
 
+        last_completed_pv = ctx.pv_table[0][..ctx.pv_length[0]]
+            .iter()
+            .map(|m| m.unwrap())
+            .collect();
+
         // Output info for GUI (standard UCI)
         if let Some(valid_mv) = last_completed_best_move {
             let score_str = if last_completed_best_score.abs() >= MATE_THRESHOLD {
@@ -756,7 +772,7 @@ pub fn search(
     SearchResult {
         score: last_completed_best_score,
         best_move: last_completed_best_move,
-        pv: Vec::new(),
+        pv: last_completed_pv,
         depth: last_completed_depth,
         nodes,
     }
