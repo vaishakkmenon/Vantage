@@ -18,3 +18,7 @@ vantage_bg.wasm
 *.pgn
 *.epd
 *.log
+
+# aider
+.aider*
+Modelfile
