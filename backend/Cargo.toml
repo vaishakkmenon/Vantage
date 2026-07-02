@@ -22,7 +22,7 @@ path = "src/lib.rs"
 crate-type = ["rlib", "cdylib"]
 
 [[bin]]
-name = "vantage"
+name = "vantage-cli"
 path = "src/bin/cli.rs"
 
 [features]
