@@ -12,6 +12,7 @@ git-config-docker
 
 # Build Artifacts
 vantage_bg.wasm
+!frontend/public/wasm/vantage_bg.wasm
 
 # Ignore chess engine logs
 *.001
