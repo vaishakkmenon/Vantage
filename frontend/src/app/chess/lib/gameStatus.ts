@@ -6,6 +6,8 @@ export const getStatusText = (status: GameStatus, winner?: GameWinner): string =
             return winner === 'white' ? 'White wins by checkmate' : winner === 'black' ? 'Black wins by checkmate' : 'Checkmate'
         case 'stalemate':
             return 'Draw by stalemate'
+        case 'resigned':
+            return winner === 'white' ? 'White wins by resignation' : 'Black wins by resignation'
         case 'draw_threefold':
             return 'Draw by repetition'
         case 'draw_50move':

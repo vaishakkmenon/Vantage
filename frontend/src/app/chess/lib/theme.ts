@@ -10,6 +10,16 @@ export const BOARD_COLORS = {
 } as const
 
 export const ACCENT_COLORS = {
-    dark: { lastMove: '', check: '', good: '', blunder: '' },
-    light: { lastMove: '', check: '', good: '', blunder: '' },
+    dark: {
+        lastMove: 'rgba(245, 158, 11, 0.35)',  // soft amber glow
+        check: 'rgba(239, 68, 68, 0.45)',   // muted red/coral, pulsing
+        good: 'rgba(34, 197, 94, 0.35)',   // dim green
+        blunder: 'rgba(239, 68, 68, 0.3)',    // dim red
+    },
+    light: {
+        lastMove: 'rgba(160, 130, 109, 0.35)', // warm clay glow, ties to --accent
+        check: 'rgba(220, 38, 38, 0.4)',
+        good: 'rgba(22, 163, 74, 0.3)',
+        blunder: 'rgba(220, 38, 38, 0.28)',
+    },
 } as const

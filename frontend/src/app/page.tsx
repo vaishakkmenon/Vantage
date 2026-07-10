@@ -1,9 +1,5 @@
-import ChessBoard from './_archive/components/ChessBoard';
+import { ChessGame } from './chess/components/ChessGame';
 
 export default function Home() {
-  return (
-    <main>
-      <ChessBoard />
-    </main>
-  );
+    return <ChessGame />;
 }

@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Vantage Chess",
-  description: "Vantage Chess",
+  description: "Play chess against the Vantage engine",
 };
 
 export default function RootLayout({
