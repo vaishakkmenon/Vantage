@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Chess } from 'chess.js';
 import { useTheme } from 'next-themes';
 import { useEngine } from '../engine/useEngine';
 import { useChessGame } from '../hooks/useChessGame';
@@ -22,6 +23,18 @@ function deriveWinner(status: GameStatus, mover: PlayerColor): GameWinner {
     return 'draw'; // stalemate + all draw_* variants
 }
 
+function checkedKingSquare(fen: string): string | null {
+    const chess = new Chess(fen);
+    if (!chess.inCheck()) return null;
+    const turn = chess.turn();
+    for (const row of chess.board()) {
+        for (const piece of row) {
+            if (piece?.type === 'k' && piece.color === turn) return piece.square;
+        }
+    }
+    return null;
+}
+
 export function ChessGame() {
     const { engine, isLoading, error } = useEngine();
     const chess = useChessGame();
@@ -33,6 +46,7 @@ export function ChessGame() {
     const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
     const [legalDestinations, setLegalDestinations] = useState<string[]>([]);
     const selectionKeyRef = useRef(0);
+    const checkSquare = useMemo(() => checkedKingSquare(chess.state.displayFen), [chess.state.displayFen]);
 
     const clearSelection = useCallback(() => {
         setSelectedSquare(null);
@@ -202,6 +216,7 @@ export function ChessGame() {
                 : { background: `radial-gradient(circle, ${accentColors.legalMove} 28%, transparent 28%)` };
         }
     }
+    if (checkSquare) squareStyles[checkSquare] = { backgroundColor: accentColors.check };
 
     return (
         <div ref={containerRef} className="flex min-h-screen items-center justify-center p-6">
