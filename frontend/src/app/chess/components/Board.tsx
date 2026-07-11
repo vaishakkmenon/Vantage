@@ -8,17 +8,21 @@ type Props = {
     fen: string;
     orientation: PlayerColor;
     onPieceDrop: (source: string, target: string, piece: string) => boolean;
+    onSquareClick: (square: string, piece: string | undefined) => void;
+    customSquareStyles: Record<string, React.CSSProperties>;
     interactive: boolean;
     theme: 'dark' | 'light';
     size: number;
 };
 
-export function Board({ fen, orientation, onPieceDrop, interactive, theme, size }: Props) {
+export function Board({ fen, orientation, onPieceDrop, onSquareClick, customSquareStyles, interactive, theme, size }: Props) {
     const colors = BOARD_COLORS[theme];
     return (
         <Chessboard
             position={fen}
             onPieceDrop={interactive ? onPieceDrop : () => false}
+            onSquareClick={interactive ? onSquareClick : undefined}
+            customSquareStyles={customSquareStyles}
             boardOrientation={orientation}
             arePiecesDraggable={interactive}
             boardWidth={size}
