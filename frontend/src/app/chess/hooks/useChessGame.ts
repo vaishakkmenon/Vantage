@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useRef, useCallback } from 'react';
-import { Chess } from 'chess.js';
+import { Chess, Square } from 'chess.js';
 import { ChessGameState, PlayerColor, DifficultyLevel, GameStatus, GameWinner, MoveRecord } from '../types';
 
 const STARTPOS_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -107,6 +107,10 @@ export function useChessGame() {
         dispatch({ type: 'ADD_MOVE', move });
     }, []);
 
+    const hasPieceAtSquare = useCallback((square: string): boolean => {
+        return !!chessRef.current.get(square as Square);
+    }, []);
+
     const setStatus = useCallback((status: GameStatus, winner: GameWinner) => {
         dispatch({ type: 'SET_STATUS', status, winner });
     }, []);
@@ -135,6 +139,7 @@ export function useChessGame() {
         startNewGame,
         applyLocalMove,
         addMove,
+        hasPieceAtSquare,
         setStatus,
         setThinking,
         setEval,

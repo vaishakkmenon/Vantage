@@ -6,6 +6,7 @@ import { useEngine } from '../engine/useEngine';
 import { useChessGame } from '../hooks/useChessGame';
 import { useBoardSize } from '../hooks/useBoardSize';
 import { DIFFICULTY_CONFIGS } from '../lib/difficulty';
+import { ACCENT_COLORS } from '../lib/theme';
 import { DifficultyLevel, GameStatus, GameWinner, PlayerColor } from '../types';
 import { LoadingScreen } from './LoadingScreen';
 import { Board } from './Board';
@@ -28,10 +29,26 @@ export function ChessGame() {
     const [showNewGameDialog, setShowNewGameDialog] = useState(true);
     const [containerRef, boardSize] = useBoardSize();
 
+    const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+    const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
+    const [legalDestinations, setLegalDestinations] = useState<string[]>([]);
+    const selectionKeyRef = useRef(0);
+
+    const clearSelection = useCallback(() => {
+        setSelectedSquare(null);
+        setSelectedPiece(null);
+        setLegalDestinations([]);
+        selectionKeyRef.current++;
+    }, []);
+
     const gameKeyRef = useRef(chess.state.gameKey);
     useEffect(() => {
         gameKeyRef.current = chess.state.gameKey;
     }, [chess.state.gameKey]);
+
+    useEffect(() => {
+        clearSelection();
+    }, [chess.state.gameKey, clearSelection]);
 
     const runEngineTurn = useCallback(async (difficulty: DifficultyLevel, keyAtStart: number) => {
         chess.setThinking(true);
@@ -76,9 +93,7 @@ export function ChessGame() {
         }
     }, [engine, chess, runEngineTurn]);
 
-    const onPieceDrop = useCallback((source: string, target: string, piece: string): boolean => {
-        if (chess.state.status !== 'active' || chess.state.isThinking || chess.isBrowsingHistory) return false;
-
+    const executeMove = useCallback((source: string, target: string, piece: string): boolean => {
         const isPromotion = piece[1] === 'P' && (target[1] === '8' || target[1] === '1');
         const uci = source + target + (isPromotion ? 'q' : '');
 
@@ -104,6 +119,57 @@ export function ChessGame() {
         return true;
     }, [chess, engine, runEngineTurn]);
 
+    const interactive = chess.state.status === 'active' && !chess.state.isThinking && !chess.isBrowsingHistory;
+
+    const onPieceDrop = useCallback((source: string, target: string, piece: string): boolean => {
+        if (!interactive) return false;
+        return executeMove(source, target, piece);
+    }, [interactive, executeMove]);
+
+    const onSquareClick = useCallback((square: string, piece: string | undefined) => {
+        if (!interactive) return;
+
+        const isOwnPiece = !!piece && piece[0] === chess.state.playerColor[0];
+
+        const selectSquare = (sq: string, pc: string) => {
+            setSelectedSquare(sq);
+            setSelectedPiece(pc);
+            setLegalDestinations([]);
+            const key = ++selectionKeyRef.current;
+            engine.getLegalMovesForSquare(sq).then((uciMoves) => {
+                if (selectionKeyRef.current !== key) return;
+                setLegalDestinations([...new Set(uciMoves.map((uci) => uci.slice(2, 4)))]);
+            });
+        };
+
+        if (!selectedSquare) {
+            if (isOwnPiece) selectSquare(square, piece!);
+            return;
+        }
+
+        if (square === selectedSquare) {
+            clearSelection();
+            return;
+        }
+
+        if (legalDestinations.includes(square)) {
+            executeMove(selectedSquare, square, selectedPiece!);
+            clearSelection();
+            return;
+        }
+
+        if (isOwnPiece) {
+            selectSquare(square, piece!);
+            return;
+        }
+
+        clearSelection();
+    }, [interactive, chess.state.playerColor, selectedSquare, selectedPiece, legalDestinations, executeMove, engine, clearSelection]);
+
+    useEffect(() => {
+        if (!interactive) clearSelection();
+    }, [interactive, clearSelection]);
+
     const handleResign = useCallback(() => {
         if (chess.state.status !== 'active') return;
         const winner: PlayerColor = chess.state.playerColor === 'white' ? 'black' : 'white';
@@ -126,7 +192,16 @@ export function ChessGame() {
     if (error) return <div className="p-6 text-destructive">Error: {error}</div>;
 
     const theme = resolvedTheme === 'light' ? 'light' : 'dark';
-    const interactive = chess.state.status === 'active' && !chess.state.isThinking && !chess.isBrowsingHistory;
+    const accentColors = ACCENT_COLORS[theme];
+    const squareStyles: Record<string, React.CSSProperties> = {};
+    if (selectedSquare && interactive) {
+        squareStyles[selectedSquare] = { backgroundColor: accentColors.selected };
+        for (const dest of legalDestinations) {
+            squareStyles[dest] = chess.hasPieceAtSquare(dest)
+                ? { outline: `3px solid ${accentColors.legalMove}`, outlineOffset: '-3px', borderRadius: '2px' }
+                : { background: `radial-gradient(circle, ${accentColors.legalMove} 28%, transparent 28%)` };
+        }
+    }
 
     return (
         <div ref={containerRef} className="flex min-h-screen items-center justify-center p-6">
@@ -143,6 +218,8 @@ export function ChessGame() {
                         fen={chess.state.displayFen}
                         orientation={chess.state.boardOrientation}
                         onPieceDrop={onPieceDrop}
+                        onSquareClick={onSquareClick}
+                        customSquareStyles={squareStyles}
                         interactive={interactive}
                         theme={theme}
                         size={boardSize}
