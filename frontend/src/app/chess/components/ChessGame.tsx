@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useEngine } from '../engine/useEngine';
 import { useChessGame } from '../hooks/useChessGame';
+import { useBoardSize } from '../hooks/useBoardSize';
 import { DIFFICULTY_CONFIGS } from '../lib/difficulty';
 import { DifficultyLevel, GameStatus, GameWinner, PlayerColor } from '../types';
 import { LoadingScreen } from './LoadingScreen';
@@ -13,8 +14,6 @@ import { MoveHistory } from './MoveHistory';
 import { GameControls } from './GameControls';
 import { GameOverModal } from './GameOverModal';
 import { NewGameDialog } from './NewGameDialog';
-
-const BOARD_SIZE = 560;
 
 function deriveWinner(status: GameStatus, mover: PlayerColor): GameWinner {
     if (status === 'checkmate') return mover;
@@ -27,6 +26,7 @@ export function ChessGame() {
     const chess = useChessGame();
     const { resolvedTheme } = useTheme();
     const [showNewGameDialog, setShowNewGameDialog] = useState(true);
+    const [containerRef, boardSize] = useBoardSize();
 
     const gameKeyRef = useRef(chess.state.gameKey);
     useEffect(() => {
@@ -129,13 +129,15 @@ export function ChessGame() {
     const interactive = chess.state.status === 'active' && !chess.state.isThinking && !chess.isBrowsingHistory;
 
     return (
-        <div className="flex min-h-screen items-center justify-center p-6">
+        <div ref={containerRef} className="flex min-h-screen items-center justify-center p-6">
             <div className="flex gap-6">
-                <EvalBar
-                    score={chess.state.currentEval}
-                    isThinking={chess.state.isThinking}
-                    height={BOARD_SIZE}
-                />
+                <div className="hidden md:block">
+                    <EvalBar
+                        score={chess.state.currentEval}
+                        isThinking={chess.state.isThinking}
+                        height={boardSize}
+                    />
+                </div>
                 <div className="flex flex-col items-center gap-3">
                     <Board
                         fen={chess.state.displayFen}
@@ -143,7 +145,7 @@ export function ChessGame() {
                         onPieceDrop={onPieceDrop}
                         interactive={interactive}
                         theme={theme}
-                        size={BOARD_SIZE}
+                        size={boardSize}
                     />
                     <GameControls
                         onNewGame={() => setShowNewGameDialog(true)}
@@ -151,8 +153,11 @@ export function ChessGame() {
                         onResign={handleResign}
                         resignDisabled={chess.state.status !== 'active'}
                     />
+                    <p className="text-center text-xs text-muted-foreground md:hidden">
+                        Eval bar and move history available on desktop.
+                    </p>
                 </div>
-                <div className="w-60 overflow-y-auto rounded-lg border" style={{ height: BOARD_SIZE }}>
+                <div className="hidden w-60 overflow-y-auto rounded-lg border md:block" style={{ height: boardSize }}>
                     <MoveHistory moves={chess.state.moves} currentMoveIndex={chess.state.currentMoveIndex} onNavigate={chess.navigateTo} />
                 </div>
             </div>

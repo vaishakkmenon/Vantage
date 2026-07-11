@@ -38,7 +38,8 @@ export function useEngine() {
 
         worker.onerror = (e: ErrorEvent) => {
             console.error('Worker error:', e);
-            setError(e.message);
+            setError(e.message || 'Worker failed to load');
+            setIsLoading(false);
         };
 
         send('init')
