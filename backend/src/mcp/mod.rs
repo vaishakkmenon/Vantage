@@ -1,5 +1,5 @@
 use crate::board::{Board, Piece};
-use crate::moves::execute::generate_legal;
+use crate::moves::execute::{generate_legal, make_move_basic};
 use crate::moves::magic::MagicTables;
 use crate::moves::types::Move;
 use crate::search::search::{SearchLimits, search};
@@ -52,6 +52,10 @@ impl Score {
     }
 }
 
+fn still_winning_mate(score: &Score) -> bool {
+    matches!(score, Score::Mate(m) if *m > 0)
+}
+
 pub fn evaluate(
     fen: &str,
     nodes: u64,
@@ -76,7 +80,6 @@ pub fn evaluate(
     })
 }
 
-#[allow(dead_code)]
 fn find_legal_move(board: &mut Board, tables: &MagicTables, mv_str: &str) -> Option<Move> {
     if mv_str.len() < 4 {
         return None;
@@ -118,8 +121,85 @@ fn find_legal_move(board: &mut Board, tables: &MagicTables, mv_str: &str) -> Opt
     })
 }
 
-#[allow(dead_code)]
-fn classify(_eval_before: &Score, _eval_after: &Score, _cp_loss: Option<i32>) -> String {
-    // TODO: classify move quality (blunder/mistake/inaccuracy/good/best) from cp_loss
-    "unknown".to_string()
+fn classify(eval_before: &Score, eval_after: &Score) -> (String, Option<i32>) {
+    match (eval_before, eval_after) {
+        (Score::Mate(n), _) if *n > 0 && !still_winning_mate(eval_after) => {
+            ("blunder".to_string(), None)
+        }
+        (_, Score::Mate(m)) if *m < 0 => ("blunder".to_string(), None),
+        (Score::Mate(n), Score::Mate(m)) if *n < 0 && *m < 0 => {
+            ("theoretical_loss".to_string(), None)
+        }
+        (Score::Mate(_), Score::Mate(_)) => ("best".to_string(), None),
+        (Score::Cp(a), Score::Cp(b)) => {
+            let cp_loss = a - b;
+            (
+                match cp_loss {
+                    c if c >= 1000 => "blunder".to_string(),
+                    c if c >= 300 => "mistake".to_string(),
+                    c if c >= 100 => "inaccuracy".to_string(),
+                    _ => "best".to_string(),
+                },
+                Some(cp_loss),
+            )
+        }
+        _ => ("best".to_string(), None),
+    }
+}
+
+pub fn analyze_move(
+    fen: &str,
+    mv: &str,
+    nodes: u64,
+    tables: &MagicTables,
+    tt: &mut TranspositionTable,
+) -> Result<AnalyzeMoveResult, String> {
+    let mut board = Board::default();
+    board.set_fen(fen)?;
+
+    let Some(mv_obj) = find_legal_move(&mut board, tables, mv) else {
+        return Ok(AnalyzeMoveResult {
+            legal: false,
+            classification: None,
+            cp_loss: None,
+            eval_before: None,
+            eval_after: None,
+            best_move: None,
+            better_line: vec![],
+            refutation: vec![],
+        });
+    };
+
+    tt.clear();
+    let limits = SearchLimits {
+        max_depth: 64,
+        node_limit: Some(nodes),
+        time_limit: None,
+    };
+
+    let result_before = search(&mut board, tables, tt, limits);
+    let eval_before = Score::from_raw(result_before.score);
+
+    let best_move = result_before.best_move.map(|m| m.to_uci());
+    let better_line: Vec<String> = result_before.pv.iter().map(|m| m.to_uci()).collect();
+
+    let _undo = make_move_basic(&mut board, mv_obj);
+
+    tt.clear();
+    let result_after = search(&mut board, tables, tt, limits);
+    let eval_after = Score::from_raw(-result_after.score);
+    let refutation: Vec<String> = result_after.pv.iter().map(|m| m.to_uci()).collect();
+
+    let (classification, cp_loss) = classify(&eval_before, &eval_after);
+
+    Ok(AnalyzeMoveResult {
+        legal: true,
+        classification: Some(classification),
+        cp_loss,
+        eval_before: Some(eval_before),
+        eval_after: Some(eval_after),
+        best_move,
+        better_line,
+        refutation,
+    })
 }
