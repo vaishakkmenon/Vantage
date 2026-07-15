@@ -67,7 +67,9 @@ impl VantageEngine {
         self.board = Board::new();
         if !moves_str.is_empty() {
             for move_str in moves_str.split_whitespace() {
-                self.apply_move(move_str);
+                if !self.apply_move(move_str) {
+                    break;
+                }
             }
         }
     }
