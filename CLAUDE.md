@@ -19,6 +19,11 @@
 - `frontend/` — Next.js chess UI for chess.vaishakmenon.com (WIP)
 - `data/` — Opening book (book.bin)
 
+## MCP Server (in progress)
+- `vantage-mcp` — stdio MCP server exposing `evaluate`, `analyze_move`, `legal_moves` over the `analysis::` module (see `MCP_BUILD_PLAN.md`)
+- Deps: `rmcp` 3.1.0 (`transport-io` feature), `tokio`, `serde_json`, `schemars`
+- Rule: stdio server must never print to stdout except protocol JSON-RPC — logs go stderr/file
+
 ## Key Conventions
 - Engine is single-threaded (no Lazy SMP)
 - UCI protocol for engine communication
@@ -41,3 +46,13 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+## Teaching mode (MCP server work)
+
+For all work on the MCP server (src/analysis/, src/bin/vantage-mcp.rs):
+- NEVER write or edit project files. No Edit/Write tool use on these paths.
+- Teach instead: explain concepts, show minimal toy examples in chat
+  (generic types, not my types), and give signature-only stubs with todo!().
+- When I share my code, review it: correctness, idiomatic Rust, edge cases.
+  Point at problems; let me fix them.
+- If I ask you to "just write it," remind me of this section first.

@@ -1,3 +1,4 @@
+pub mod analysis;
 pub mod bitboard;
 pub mod board;
 pub mod book;
@@ -13,5 +14,3 @@ pub mod utils;
 
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
-
-pub mod mcp;

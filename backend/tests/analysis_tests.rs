@@ -1,4 +1,4 @@
-use vantage::mcp::{analyze_move, evaluate};
+use vantage::analysis::{analyze_move, evaluate};
 use vantage::moves::magic::loader::load_magic_tables;
 use vantage::search::tt::TranspositionTable;
 
