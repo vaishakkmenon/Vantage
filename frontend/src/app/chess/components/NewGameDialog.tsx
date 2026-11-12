@@ -58,7 +58,10 @@ export function NewGameDialog({ open, onStart }: Props) {
                     </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="sm:justify-between">
+                    <Button variant="ghost" asChild>
+                        <a href="https://blindfold.vaishakmenon.com">Play a friend blindfolded</a>
+                    </Button>
                     <Button onClick={() => onStart(playerColor, difficulty)}>Start Game</Button>
                 </DialogFooter>
             </DialogContent>
